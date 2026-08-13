@@ -385,7 +385,8 @@ const state = {
   group: "field",
   log: [],
   sel: null,
-  hover: null
+  hover: null,
+  holds: new Set()
 };
 
 /* ---------------- storage ---------------- */
@@ -525,9 +526,17 @@ function renderChart(){
   }
 
   /* edges */
-  const hl = state.sel || state.hover;
+  const activeIds = new Set(state.holds);
+  if (state.hover) activeIds.add(state.hover);
+  const hl = activeIds.size > 0;
   const near = new Set();
-  if (hl){ near.add(hl); BY_ID[hl].prereqs.forEach(p=>near.add(p)); BY_ID[hl].unlocks.forEach(u=>near.add(u)); }
+  activeIds.forEach(id => {
+    const nd = BY_ID[id];
+    if (!nd) return;
+    near.add(id);
+    nd.prereqs.forEach(p=>near.add(p));
+    nd.unlocks.forEach(u=>near.add(u));
+  });
   nodes.forEach(n => {
     n.prereqs.forEach(p => {
       if (!vis.has(p)) return;
@@ -535,7 +544,7 @@ function renderChart(){
       if (!A || !B) return;
       const mx = (A.x+B.x)/2, my = (A.y+B.y)/2;
       const cx = mx*0.72, cy = my*0.72;
-      const touched = hl && (n.id === hl || p === hl);
+      const touched = hl && (activeIds.has(n.id) || activeIds.has(p));
       const dimmed = hl && !touched;
       gEdge.append(el("path",{
         d:`M${A.x.toFixed(1)},${A.y.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${B.x.toFixed(1)},${B.y.toFixed(1)}`,
@@ -569,13 +578,13 @@ function renderChart(){
     } else {
       g.append(mark(rad,{fill:"#0D1424",stroke:c,"stroke-width":1.2,opacity:.85}));
     }
-    if (n.id === state.sel){
+    if (state.holds.has(n.id)){
       g.append(mark(rad+11,{fill:"none",stroke:"#FFFFFF","stroke-width":1,opacity:.7}));
     }
     g.append(el("title",{}, n.label + "  (Level " + n.level + ")"));
     gNode.append(g);
 
-    if (showAllLabels || n.id === state.sel || n.id === state.hover || near.has(n.id)){
+    if (showAllLabels || near.has(n.id)){
       const left = Math.cos(P.a) < 0;
       const off = rad + 7;
       const lx = P.x + Math.cos(P.a)*off, ly = P.y + Math.sin(P.a)*off;
@@ -616,7 +625,14 @@ function renderChart(){
     dragging = false; svg.classList.remove("grabbing");
     if (moved) return;
     const t = e.target.closest ? e.target.closest(".nd") : null;
-    select(t ? t.dataset.id : null);
+    if (t){
+      const id = t.dataset.id;
+      if (state.holds.has(id)) state.holds.delete(id); else state.holds.add(id);
+      select(id);
+    } else {
+      state.holds.clear();
+      select(null);
+    }
   });
   svg.addEventListener("pointerleave", () => { dragging = false; svg.classList.remove("grabbing"); if (state.hover){ state.hover = null; renderChart(); } });
   svg.addEventListener("wheel", e => {
@@ -976,7 +992,7 @@ function renderAll(){
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     const m = document.getElementById("drawerMount");
-    if (m.innerHTML) m.innerHTML = ""; else select(null);
+    if (m.innerHTML) m.innerHTML = ""; else { state.holds.clear(); select(null); }
   });
 })();
 
