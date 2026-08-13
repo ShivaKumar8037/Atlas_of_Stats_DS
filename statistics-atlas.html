@@ -616,9 +616,9 @@ function renderChart(){
       if (id !== state.hover){ state.hover = id; renderChart(); }
       return;
     }
+    if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 4) moved = true;
     const k = vb.w / svg.clientWidth;
     const dx = (e.clientX - sx) * k, dy = (e.clientY - sy) * k;
-    if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
     vb.x = ox - dx; vb.y = oy - dy; applyVB();
   });
   svg.addEventListener("pointerup", e => {
