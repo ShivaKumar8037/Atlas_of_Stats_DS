@@ -22,10 +22,14 @@ Rings are difficulty. Wedges are fields. Circles are core statistics, squares ar
 
 ## Use it
 
+![Click here ](https://shivakumar8037.github.io/Atlas_of_Stats_DS/statistics-atlas.html)
+
+or 
+
 1. Download `statistics-atlas.html`
 2. Open it in any browser
 
-To share a live link, turn on GitHub Pages for this repo (Settings, Pages, deploy from `main`, root folder) and the atlas will be served at `https://<your-username>.github.io/<repo-name>/statistics-atlas.html`.
+
 
 ## Progress and backup
 
