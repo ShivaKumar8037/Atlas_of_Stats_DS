@@ -8,7 +8,7 @@ An interactive map of everything a data scientist needs to know about statistics
 ![Single file](https://img.shields.io/badge/build-none%2C%20single%20file-8593B0?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-8593B0?style=flat-square)
 
-![The atlas](assets/atlas-preview.png)
+![The atlas](atlas-preview.png)
 
 Rings are difficulty. Wedges are fields. Circles are core statistics, squares are the craft that grew around it. Gold means mastered, dashed cyan means every prerequisite is already gold.
 
@@ -18,7 +18,7 @@ Rings are difficulty. Wedges are fields. Circles are core statistics, squares ar
 
 **Checklist.** The same 453 concepts as a numbered study sequence. Each field is ordered by a topological sort of its own prerequisites, so step 07 never depends on step 12. Mathematical foundations runs functions, set theory, combinatorics, limits, vectors, derivatives, integrals, and on to measure theory. Filter by level, search, or hide what you have finished.
 
-![What is inside](assets/fields.png)
+![What is inside](fields.png)
 
 ## Use it
 
