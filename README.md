@@ -22,7 +22,7 @@ Rings are difficulty. Wedges are fields. Circles are core statistics, squares ar
 
 ## Use it
 
-![Click here ](https://shivakumar8037.github.io/Atlas_of_Stats_DS/statistics-atlas.html)
+[Click here for the interactive website ](https://shivakumar8037.github.io/Atlas_of_Stats_DS/statistics-atlas.html)
 
 or 
 
