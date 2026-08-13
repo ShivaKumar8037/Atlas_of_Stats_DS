@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas of Statistics</title>
+<style>
+  :root{
+    --ink:#0A0E1A;
+    --ink-2:#0E1424;
+    --panel:#131A2C;
+    --line:#212B45;
+    --text:#DCE3F0;
+    --dim:#8593B0;
+    --gold:#F0B95E;
+    --ready:#4FD1E0;
+    --serif: "Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans: ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 800px at 50% 30%, #131C33 0%, rgba(10,14,26,0) 70%),
+      var(--ink);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  button{font-family:inherit;color:inherit;cursor:pointer}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    padding:22px 22px 0;
+    max-width:1600px;margin:0 auto;
+  }
+  .mast-row{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;justify-content:space-between}
+  .wordmark{margin:0;font-family:var(--serif);font-size:31px;font-weight:400;letter-spacing:.01em;line-height:1.1}
+  .wordmark em{font-style:italic;color:var(--gold)}
+  .tagline{margin:6px 0 0;color:var(--dim);font-size:12.5px;max-width:62ch}
+  .counts{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  .counts b{color:var(--gold);font-weight:600}
+
+  .progress-shell{display:flex;align-items:center;gap:14px}
+  .dial{width:64px;height:64px;flex:0 0 auto}
+  .dial-num{font-family:var(--mono);font-size:15px;fill:var(--gold)}
+  .dial-lab{font-family:var(--mono);font-size:7px;fill:var(--dim);letter-spacing:.14em}
+
+  /* ---------- controls ---------- */
+  .controls{
+    max-width:1600px;margin:18px auto 0;padding:0 22px;
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  }
+  .seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--ink-2)}
+  .seg button{background:none;border:0;padding:7px 16px;font-size:12.5px;color:var(--dim);letter-spacing:.02em}
+  .seg button[aria-pressed="true"]{background:var(--gold);color:#16110A;font-weight:600}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chip{
+    background:var(--ink-2);border:1px solid var(--line);border-radius:999px;
+    padding:6px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dim);
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .chip[aria-pressed="true"]{color:var(--text);border-color:#3A4car}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+  .chip[aria-pressed="true"] .dot{opacity:1}
+  .chip .n{opacity:.55;font-size:10px}
+  .lvl-1[aria-pressed="true"]{border-color:#5B7ACF;color:#BFD0FF}
+  .lvl-2[aria-pressed="true"]{border-color:#4FA8C7;color:#B7E4F5}
+  .lvl-3[aria-pressed="true"]{border-color:#5CB98A;color:#BCEBD1}
+  .lvl-4[aria-pressed="true"]{border-color:#C99A4E;color:#F3D9A8}
+  .lvl-5[aria-pressed="true"]{border-color:#C0644F;color:#F5BDAE}
+  .search{
+    background:var(--ink-2);border:1px solid var(--line);border-radius:999px;color:var(--text);
+    padding:7px 14px;font-size:12.5px;min-width:180px;outline:none;
+  }
+  .search:focus{border-color:var(--gold)}
+  .ghost{background:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12px;color:var(--dim)}
+  .ghost:hover{color:var(--text);border-color:#33405F}
+  .ghost[aria-pressed="true"]{color:var(--gold);border-color:#5A4A28}
+
+  /* ---------- stage ---------- */
+  .stage{max-width:1600px;margin:14px auto 0;padding:0 22px 40px;display:grid;grid-template-columns:1fr 330px;gap:18px;align-items:start}
+  .stage.solo{grid-template-columns:1fr}
+  .chartwrap{
+    position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:radial-gradient(900px 700px at 50% 50%, #10182C 0%, #090D18 78%);
+    height:min(78vh,860px);
+  }
+  #chart{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #chart.grabbing{cursor:grabbing}
+  .zoombar{position:absolute;left:12px;bottom:12px;display:flex;gap:6px}
+  .zoombar button{
+    width:30px;height:30px;border-radius:8px;background:rgba(19,26,44,.85);border:1px solid var(--line);
+    font-size:14px;line-height:1;color:var(--dim);display:grid;place-items:center;backdrop-filter:blur(4px);
+  }
+  .zoombar button.wide{width:auto;padding:0 10px;font-size:11px;font-family:var(--mono);letter-spacing:.06em}
+  .legend{
+    position:absolute;right:12px;top:12px;background:rgba(12,17,30,.82);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);max-width:215px;
+    max-height:calc(100% - 24px);overflow:auto;
+  }
+  .legend .quick{display:flex;gap:4px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
+  .legend .quick button{flex:1;background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:4px 2px;font-size:10px;color:var(--dim)}
+  .legend .quick button:hover{color:var(--text)}
+  .legend h4{margin:0 0 7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  .legend .row{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--dim);padding:1.5px 0;cursor:pointer}
+  .legend .row:hover{color:var(--text)}
+  .legend .row.off{opacity:.32}
+  .legend .sw{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+  .key{position:absolute;left:12px;top:12px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.9}
+  .key i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+
+  /* ---------- detail panel ---------- */
+  .panel{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px;position:sticky;top:16px}
+  .panel .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .panel h3{margin:8px 0 4px;font-family:var(--serif);font-size:20px;font-weight:400;line-height:1.2}
+  .panel .note{color:var(--dim);font-size:12.5px;margin:8px 0 14px}
+  .panel h5{margin:14px 0 6px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  .linklist{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:5px}
+  .linklist button{
+    background:var(--ink-2);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:11.5px;color:var(--dim);text-align:left
+  }
+  .linklist button:hover{color:var(--text);border-color:#38466A}
+  .linklist button.done{color:var(--gold);border-color:#4A3C1E}
+  .markbtn{
+    width:100%;margin-top:16px;padding:10px;border-radius:9px;border:1px solid var(--line);
+    background:var(--ink-2);font-size:13px;letter-spacing:.02em;
+  }
+  .markbtn.on{background:var(--gold);color:#16110A;border-color:var(--gold);font-weight:600}
+  .empty{color:var(--dim);font-size:12.5px}
+
+  /* ---------- checklist ---------- */
+  .list-view{max-width:1600px;margin:14px auto 0;padding:0 22px 60px}
+  .ready-strip{border:1px solid #2A3E52;background:linear-gradient(180deg,#101E28,#0D141F);border-radius:14px;padding:14px 16px;margin-bottom:22px}
+  .ready-strip h4{margin:0 0 3px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ready)}
+  .ready-strip p{margin:0 0 10px;font-size:12px;color:var(--dim)}
+  .ready-items{display:flex;flex-wrap:wrap;gap:6px}
+  .ready-items button{background:rgba(79,209,224,.08);border:1px solid #2B4A56;border-radius:7px;padding:5px 10px;font-size:12px;color:#BFECF2}
+  .ready-items button:hover{background:rgba(79,209,224,.18)}
+
+  .lvl-block{margin-bottom:34px}
+  .lvl-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:4px}
+  .lvl-num{font-family:var(--serif);font-size:34px;line-height:1;color:var(--gold);font-style:italic;min-width:34px}
+  .lvl-name{font-family:var(--serif);font-size:19px}
+  .lvl-desc{color:var(--dim);font-size:12px;flex:1 1 260px}
+  .bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin:10px 0 16px}
+  .bar i{display:block;height:100%;background:var(--gold);transition:width .35s ease}
+
+  .dom-group{margin:0 0 18px}
+  .dom-head{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .dom-head .sw{width:9px;height:9px;border-radius:2px}
+  .dom-head .frac{margin-left:auto;font-size:10px;opacity:.75}
+  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:7px}
+  .item{
+    display:flex;gap:10px;align-items:flex-start;background:var(--ink-2);border:1px solid var(--line);
+    border-radius:10px;padding:9px 11px;text-align:left;width:100%;
+  }
+  .item:hover{border-color:#36446A}
+  .item .box{
+    width:15px;height:15px;border-radius:4px;border:1.5px solid #46557D;flex:0 0 auto;margin-top:2px;
+    display:grid;place-items:center;font-size:10px;color:transparent;
+  }
+  .item.done{border-color:#4A3C1E;background:linear-gradient(180deg,#1B1710,#12100B)}
+  .item.done .box{background:var(--gold);border-color:var(--gold);color:#16110A}
+  .item.done .t{color:var(--gold)}
+  .item.ready .box{border-color:var(--ready);box-shadow:0 0 0 3px rgba(79,209,224,.11)}
+  .item .t{font-size:13px;line-height:1.35}
+  .item .d{font-size:11.5px;color:var(--dim);margin-top:2px}
+  .item .needs{font-size:10.5px;color:#6E7C99;margin-top:4px;font-family:var(--mono)}
+  .item.done .d,.item.done .needs{opacity:.5}
+
+  /* step ordering + field view */
+  .item .step{font-family:var(--mono);font-size:10px;color:#5D6A85;flex:0 0 auto;margin-top:3px;min-width:20px;text-align:right}
+  .item.done .step{color:#8A7440}
+  .item .lvtag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:#5D6A85;border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:1px}
+  .field-block{margin-bottom:34px}
+  .field-head{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:12px;flex-wrap:wrap}
+  .field-head .sw{width:11px;height:11px;flex:0 0 auto}
+  .field-head h3{margin:0;font-family:var(--serif);font-size:20px;font-weight:400}
+  .field-head .kind{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+  .field-head .counts{margin-left:auto}
+  .seq{display:grid;gap:7px}
+  .seq .item{max-width:none}
+
+  /* progress drawer */
+  .scrim{position:fixed;inset:0;background:rgba(5,8,15,.72);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:40}
+  .drawer{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:660px;width:100%;max-height:86vh;overflow:auto;padding:22px}
+  .drawer h2{margin:0 0 2px;font-family:var(--serif);font-size:23px;font-weight:400}
+  .drawer .sub{color:var(--dim);font-size:12.5px;margin:0 0 18px}
+  .drawer h5{margin:20px 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  .minibars{display:grid;gap:6px}
+  .minirow{display:grid;grid-template-columns:132px 1fr 54px;gap:10px;align-items:center;font-size:12px}
+  .minirow .track{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+  .minirow .track i{display:block;height:100%;border-radius:3px}
+  .minirow .num{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:right}
+  .spark{width:100%;height:70px;border:1px solid var(--line);border-radius:9px;background:var(--ink-2)}
+  .drawer textarea{width:100%;height:88px;background:var(--ink);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:var(--mono);font-size:11px;padding:9px;resize:vertical}
+  .drawer .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .drawer .btnrow button{background:var(--ink-2);border:1px solid var(--line);border-radius:9px;padding:8px 13px;font-size:12.5px;color:var(--text)}
+  .drawer .btnrow button:hover{border-color:#3A4568}
+  .drawer .btnrow button.primary{background:var(--gold);color:#16110A;border-color:var(--gold);font-weight:600}
+  .drawer .close{float:right;background:none;border:0;color:var(--dim);font-size:20px;line-height:1;padding:0 2px}
+  .msg{font-size:11.5px;color:var(--ready);min-height:16px;margin-top:6px}
+
+  .foot{max-width:1600px;margin:0 auto;padding:0 22px 50px;color:#5D6A85;font-size:11.5px;font-family:var(--mono)}
+  .saving{position:fixed;right:14px;bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-family:var(--mono);font-size:10.5px;color:var(--dim);opacity:0;transition:opacity .25s;pointer-events:none}
+  .saving.show{opacity:1}
+  .hidden{display:none !important}
+
+  @media (max-width:980px){
+    .stage{grid-template-columns:1fr}
+    .panel{position:static}
+    .chartwrap{height:64vh}
+    .legend{display:none}
+    .wordmark{font-size:25px}
+    .items{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="mast-row">
+    <div>
+      <h1 class="wordmark">Atlas of <em>Statistics</em></h1>
+      <p class="tagline"><span id="tot">0</span> concepts, wired by what you need to know first. Rings are difficulty, wedges are fields, circles are statistics and squares are the craft that grew around it.</p>
+    </div>
+    <div class="progress-shell">
+      <svg class="dial" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="26" fill="none" stroke="#212B45" stroke-width="5"/>
+        <circle id="dialArc" cx="32" cy="32" r="26" fill="none" stroke="#F0B95E" stroke-width="5"
+                stroke-linecap="round" stroke-dasharray="0 999" transform="rotate(-90 32 32)"/>
+        <text id="dialNum" class="dial-num" x="32" y="34" text-anchor="middle">0%</text>
+        <text class="dial-lab" x="32" y="44" text-anchor="middle">MASTERED</text>
+      </svg>
+      <div class="counts" id="counts">0 of 319 complete</div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="seg" role="group" aria-label="View">
+    <button id="viewChart" aria-pressed="true">Star chart</button>
+    <button id="viewList" aria-pressed="false">Checklist</button>
+  </div>
+  <div class="chips" id="levelChips"></div>
+  <input class="search" id="search" type="search" placeholder="Search concepts" autocomplete="off">
+  <button class="ghost" id="labelToggle" aria-pressed="false">Show all labels</button>
+  <button class="ghost" id="hideDone" aria-pressed="false">Hide completed</button>
+  <button class="ghost" id="progressBtn">Progress &amp; backup</button>
+  <button class="ghost" id="resetBtn">Reset progress</button>
+</div>
+
+<main class="stage" id="stage">
+  <div class="chartwrap" id="chartwrap">
+    <svg id="chart" role="img" aria-label="Radial map of statistics concepts"></svg>
+    <div class="key">
+      <div><i style="background:#F0B95E"></i>mastered</div>
+      <div><i style="background:transparent;border:1.5px solid #4FD1E0"></i>ready to start</div>
+      <div><i style="background:#2A3350"></i>locked by prerequisites</div>
+      <div style="margin-top:6px;opacity:.8"><i style="background:#8593B0"></i>core statistics</div>
+      <div style="opacity:.8"><i style="background:#8593B0;border-radius:3px"></i>data science craft</div>
+    </div>
+    <div class="legend" id="legend"><h4>Fields</h4></div>
+    <div class="zoombar">
+      <button id="zoomIn" title="Zoom in">+</button>
+      <button id="zoomOut" title="Zoom out">&minus;</button>
+      <button id="zoomFit" class="wide" title="Reset view">FIT</button>
+    </div>
+  </div>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<section class="list-view hidden" id="listView">
+  <div class="seg" id="groupSeg" role="group" aria-label="Checklist grouping" style="margin-bottom:18px">
+    <button id="groupField" aria-pressed="true">Step by step, by field</button>
+    <button id="groupLevel" aria-pressed="false">Grouped by level</button>
+  </div>
+  <div id="listBody"></div>
+</section>
+<div id="drawerMount"></div>
+
+<div class="foot" id="foot"></div>
+<div class="saving" id="saving">saved</div>
+
+<script>
+const DATA = [{"id":"set-theory","label":"Set theory & notation","level":1,"domain":"math","prereqs":[],"note":"Unions, intersections, complements, partitions. Every probability rule is a set rule in disguise."},{"id":"combinatorics","label":"Combinatorics","level":1,"domain":"math","prereqs":["set-theory"],"note":"Permutations, combinations, multiplication rule. Foundation for discrete probability."},{"id":"functions-notation","label":"Functions & math notation","level":1,"domain":"math","prereqs":[],"note":"Domain, range, composition, inverse, logs and exponentials, sigma and pi notation."},{"id":"limits-continuity","label":"Limits & continuity","level":2,"domain":"math","prereqs":["functions-notation"],"note":"What 'approaches' means. Needed for asymptotics and for density as a limit of histograms."},{"id":"derivatives","label":"Derivatives","level":2,"domain":"math","prereqs":["limits-continuity"],"note":"Rates of change, chain rule, partial derivatives. The engine of every optimizer."},{"id":"integrals","label":"Integrals","level":2,"domain":"math","prereqs":["limits-continuity"],"note":"Area under a curve. Continuous probability is integration over a density."},{"id":"optimization-calculus","label":"Optimization (first & second order)","level":3,"domain":"math","prereqs":["derivatives"],"note":"Setting gradients to zero, Hessians, constrained optimization with Lagrange multipliers."},{"id":"multivariable-calculus","label":"Multivariable calculus","level":3,"domain":"math","prereqs":["derivatives","integrals"],"note":"Gradients, Jacobians, double integrals. Required for joint densities and MLE in many parameters."},{"id":"vectors-matrices","label":"Vectors & matrix algebra","level":2,"domain":"math","prereqs":["functions-notation"],"note":"Dot products, matrix multiply, transpose, inverse. Regression is linear algebra."},{"id":"linear-independence-rank","label":"Rank, span & linear independence","level":3,"domain":"math","prereqs":["vectors-matrices"],"note":"Explains multicollinearity, identifiability, and why a design matrix can be singular."},{"id":"quadratic-forms","label":"Quadratic forms & positive definiteness","level":3,"domain":"math","prereqs":["vectors-matrices"],"note":"x'Ax shows up in variance of linear combinations, Mahalanobis distance, and normal densities."},{"id":"matrix-decomposition","label":"Eigen, SVD & Cholesky","level":3,"domain":"math","prereqs":["vectors-matrices","linear-independence-rank"],"note":"Decompositions behind PCA, whitening, sampling correlated normals, and stable solvers."},{"id":"convex-optimization","label":"Convex optimization","level":4,"domain":"math","prereqs":["optimization-calculus","multivariable-calculus"],"note":"Convex sets and functions, duality, KKT. Why lasso, ridge, and SVM have reliable solutions."},{"id":"numerical-linear-algebra","label":"Numerical stability & conditioning","level":4,"domain":"math","prereqs":["matrix-decomposition"],"note":"QR instead of normal equations, condition numbers, floating point traps in real pipelines."},{"id":"measure-theory","label":"Measure theory","level":5,"domain":"math","prereqs":["set-theory","integrals"],"note":"Sigma-algebras, measurable functions, Lebesgue integration. The rigorous floor under probability."},{"id":"sample-space","label":"Random experiments & sample space","level":1,"domain":"prob","prereqs":["set-theory"],"note":"Outcomes, events, and the difference between an event and its probability."},{"id":"probability-axioms","label":"Probability axioms","level":1,"domain":"prob","prereqs":["sample-space"],"note":"Non-negativity, total mass one, additivity. Everything else is derived from these three."},{"id":"counting-rules","label":"Counting & equally likely outcomes","level":1,"domain":"prob","prereqs":["combinatorics","probability-axioms"],"note":"Classical probability problems: birthdays, poker hands, sampling with and without replacement."},{"id":"conditional-probability","label":"Conditional probability","level":2,"domain":"prob","prereqs":["probability-axioms"],"note":"P(A|B) as restricting the sample space. The single most misused idea in applied work."},{"id":"joint-probability","label":"Joint probability","level":2,"domain":"prob","prereqs":["probability-axioms","conditional-probability"],"note":"Probability over two or more variables at once, and the chain rule of probability."},{"id":"marginal-probability","label":"Marginal probability","level":2,"domain":"prob","prereqs":["joint-probability"],"note":"Summing or integrating a joint down to one variable. Marginalization is everywhere in Bayes."},{"id":"independence","label":"Independence & conditional independence","level":2,"domain":"prob","prereqs":["conditional-probability","joint-probability"],"note":"Independence is an assumption, not a default. Conditional independence powers naive Bayes and DAGs."},{"id":"law-total-probability","label":"Law of total probability","level":2,"domain":"prob","prereqs":["conditional-probability","marginal-probability"],"note":"Break a probability into cases over a partition. The denominator of Bayes' rule."},{"id":"bayes-theorem","label":"Bayes' theorem","level":2,"domain":"prob","prereqs":["conditional-probability","joint-probability","law-total-probability"],"note":"Invert a conditional. Base rates, false positive puzzles, and the root of Bayesian inference."},{"id":"random-variables","label":"Random variables","level":2,"domain":"prob","prereqs":["probability-axioms"],"note":"A function from outcomes to numbers. Discrete versus continuous, and why the distinction matters."},{"id":"pmf-pdf","label":"PMF & PDF","level":2,"domain":"prob","prereqs":["random-variables","integrals"],"note":"Mass versus density. A density value is not a probability."},{"id":"cdf","label":"CDF & survival function","level":2,"domain":"prob","prereqs":["random-variables"],"note":"F(x) = P(X <= x). The universal description that works for any random variable."},{"id":"quantile-function","label":"Quantile function","level":3,"domain":"prob","prereqs":["cdf"],"note":"Inverse CDF. Basis for percentiles, QQ plots, inverse transform sampling, and quantile regression."},{"id":"expectation","label":"Expectation","level":2,"domain":"prob","prereqs":["pmf-pdf"],"note":"Long-run average, linearity of expectation, expectation of a function of a random variable."},{"id":"variance-moments","label":"Variance & higher moments","level":2,"domain":"prob","prereqs":["expectation"],"note":"Spread, standard deviation, the variance of a sum, and what moments actually summarize."},{"id":"covariance-correlation","label":"Covariance & correlation","level":2,"domain":"prob","prereqs":["expectation","joint-probability"],"note":"Linear co-movement, scale invariance of correlation, and why zero correlation is not independence."},{"id":"conditional-expectation","label":"Conditional expectation","level":3,"domain":"prob","prereqs":["conditional-probability","expectation"],"note":"E[Y|X] is the best predictor under squared loss. Regression is an estimate of this object."},{"id":"iterated-expectation","label":"Iterated expectation & variance decomposition","level":4,"domain":"prob","prereqs":["conditional-expectation","variance-moments"],"note":"Tower rule and the law of total variance. Splits variance into within and between components."},{"id":"transformations-rv","label":"Transformations of random variables","level":3,"domain":"prob","prereqs":["random-variables","cdf","derivatives"],"note":"CDF method and the Jacobian change of variables. Explains lognormal, chi-square, and log transforms."},{"id":"mgf","label":"Moment generating functions","level":4,"domain":"prob","prereqs":["expectation","integrals"],"note":"Generates moments and proves distributions of sums. The clean way to derive many results."},{"id":"inequalities","label":"Markov & Chebyshev inequalities","level":3,"domain":"prob","prereqs":["expectation","variance-moments"],"note":"Distribution-free tail bounds. The stepping stone to the law of large numbers."},{"id":"jensen","label":"Jensen's inequality","level":4,"domain":"prob","prereqs":["expectation","convex-optimization"],"note":"E[g(X)] versus g(E[X]). Explains bias in log-transformed metrics and the ELBO in variational inference."},{"id":"convergence-concepts","label":"Modes of convergence","level":4,"domain":"prob","prereqs":["inequalities","limits-continuity"],"note":"In probability, almost surely, in distribution, in mean square. Asymptotics needs the vocabulary."},{"id":"lln","label":"Law of large numbers","level":3,"domain":"prob","prereqs":["expectation","inequalities"],"note":"Sample means converge to the truth. Why sampling and Monte Carlo work at all."},{"id":"clt","label":"Central limit theorem","level":3,"domain":"prob","prereqs":["lln","variance-moments"],"note":"Standardized sums go normal. The reason so many tests use the normal or t distribution."},{"id":"delta-method","label":"Delta method","level":4,"domain":"prob","prereqs":["clt","derivatives"],"note":"Standard errors for nonlinear functions of estimates, like ratios, odds ratios, and lift."},{"id":"slutsky","label":"Slutsky's theorem & continuous mapping","level":5,"domain":"prob","prereqs":["convergence-concepts"],"note":"Lets you swap in consistent estimates of nuisance parameters without breaking asymptotics."},{"id":"order-statistics","label":"Order statistics","level":4,"domain":"prob","prereqs":["cdf","transformations-rv"],"note":"Distribution of the min, max, and quantiles. Underlies extreme value work and rank methods."},{"id":"entropy","label":"Entropy & mutual information","level":3,"domain":"prob","prereqs":["expectation","pmf-pdf"],"note":"Uncertainty measured in bits. Splitting criterion for trees and a model-free dependence measure."},{"id":"kl-divergence","label":"KL divergence & cross-entropy","level":4,"domain":"prob","prereqs":["entropy"],"note":"Distance between distributions. Maximum likelihood is minimizing KL to the empirical distribution."},{"id":"stochastic-processes","label":"Stochastic processes","level":4,"domain":"prob","prereqs":["random-variables","conditional-expectation"],"note":"Collections of random variables indexed by time. Formal home for time series and queues."},{"id":"markov-chains","label":"Markov chains","level":4,"domain":"prob","prereqs":["stochastic-processes","conditional-probability"],"note":"Memoryless transitions, stationary distributions, ergodicity. The theory that makes MCMC valid."},{"id":"poisson-process","label":"Poisson process","level":4,"domain":"prob","prereqs":["stochastic-processes","poisson-dist"],"note":"Arrivals in continuous time. Models clicks, failures, and traffic in production systems."},{"id":"martingales","label":"Martingales & optional stopping","level":5,"domain":"prob","prereqs":["conditional-expectation","stochastic-processes"],"note":"Fair-game processes. The basis for valid sequential testing and peeking-safe experiment analysis."},{"id":"copulas","label":"Copulas","level":5,"domain":"prob","prereqs":["joint-probability","quantile-function"],"note":"Separates marginals from dependence structure. Used in risk modeling and tail dependence."},{"id":"measure-probability","label":"Measure-theoretic probability","level":5,"domain":"prob","prereqs":["measure-theory","random-variables"],"note":"Probability spaces, Radon-Nikodym derivatives, rigorous conditional expectation."},{"id":"bernoulli","label":"Bernoulli","level":2,"domain":"dist","prereqs":["random-variables"],"note":"One trial, two outcomes. The atom of conversion, click, and churn modeling."},{"id":"binomial","label":"Binomial","level":2,"domain":"dist","prereqs":["bernoulli","counting-rules"],"note":"Counts of successes in n independent trials. The workhorse for proportion tests."},{"id":"geometric-negbinom","label":"Geometric & negative binomial","level":3,"domain":"dist","prereqs":["bernoulli"],"note":"Trials until success, and overdispersed counts when Poisson variance is too small."},{"id":"hypergeometric","label":"Hypergeometric","level":3,"domain":"dist","prereqs":["counting-rules"],"note":"Sampling without replacement. Powers Fisher's exact test and enrichment analysis."},{"id":"poisson-dist","label":"Poisson","level":2,"domain":"dist","prereqs":["binomial"],"note":"Rare event counts per unit of exposure. Mean equals variance, which is testable."},{"id":"multinomial","label":"Multinomial & categorical","level":3,"domain":"dist","prereqs":["binomial"],"note":"More than two categories. Behind chi-square tests and softmax classification."},{"id":"uniform","label":"Uniform","level":2,"domain":"dist","prereqs":["pmf-pdf"],"note":"Flat density. The source of all other random numbers via transformation."},{"id":"normal-dist","label":"Normal distribution","level":2,"domain":"dist","prereqs":["pmf-pdf"],"note":"Bell curve, z-scores, the 68-95-99.7 rule, and closure under linear combinations."},{"id":"exponential-dist","label":"Exponential","level":2,"domain":"dist","prereqs":["pmf-pdf"],"note":"Waiting times with a constant hazard, and the memoryless property."},{"id":"lognormal","label":"Lognormal","level":3,"domain":"dist","prereqs":["normal-dist","transformations-rv"],"note":"Right-skewed positive quantities: revenue, session time, salaries. Log transform makes it normal."},{"id":"gamma-dist","label":"Gamma","level":3,"domain":"dist","prereqs":["exponential-dist","integrals"],"note":"Sum of exponentials, flexible positive-skew family, conjugate prior for Poisson rates."},{"id":"beta-dist","label":"Beta","level":3,"domain":"dist","prereqs":["gamma-dist"],"note":"Distribution on (0,1). Natural prior and posterior for a conversion rate."},{"id":"chi-square-dist","label":"Chi-square","level":3,"domain":"dist","prereqs":["normal-dist","gamma-dist"],"note":"Sum of squared standard normals. Null distribution for variance and goodness of fit."},{"id":"t-dist","label":"Student t","level":3,"domain":"dist","prereqs":["normal-dist","chi-square-dist"],"note":"Normal mean with estimated variance. Heavier tails at small sample sizes."},{"id":"f-dist","label":"F distribution","level":3,"domain":"dist","prereqs":["chi-square-dist"],"note":"Ratio of scaled chi-squares. Null distribution for ANOVA and nested model comparison."},{"id":"weibull","label":"Weibull & extreme value","level":4,"domain":"dist","prereqs":["exponential-dist","order-statistics"],"note":"Flexible hazard shapes for reliability, plus the limit laws for maxima."},{"id":"heavy-tails","label":"Power laws & heavy tails","level":4,"domain":"dist","prereqs":["cdf","variance-moments"],"note":"When means and variances are unstable or undefined. Common in engagement and revenue data."},{"id":"mixture-distributions","label":"Mixture distributions","level":4,"domain":"dist","prereqs":["pmf-pdf","law-total-probability"],"note":"Populations made of latent subgroups. Explains multimodality and zero-inflation."},{"id":"exponential-family","label":"Exponential family","level":4,"domain":"dist","prereqs":["mgf","normal-dist","gamma-dist"],"note":"Common structure with natural parameters and sufficient statistics. Unifies all GLMs."},{"id":"multivariate-normal","label":"Multivariate normal","level":4,"domain":"dist","prereqs":["normal-dist","covariance-correlation","quadratic-forms"],"note":"Mean vector and covariance matrix, marginals and conditionals stay normal. Core of many models."},{"id":"dirichlet","label":"Dirichlet","level":5,"domain":"dist","prereqs":["beta-dist","multinomial"],"note":"Distribution over probability vectors. Prior for multinomials and topic models."},{"id":"wishart","label":"Wishart & inverse Wishart","level":5,"domain":"dist","prereqs":["multivariate-normal","chi-square-dist"],"note":"Distribution over covariance matrices. Prior in hierarchical and multivariate Bayesian models."},{"id":"measurement-scales","label":"Data types & measurement scales","level":1,"domain":"eda","prereqs":[],"note":"Nominal, ordinal, interval, ratio. Decides which summary and which test is legitimate."},{"id":"central-tendency","label":"Mean, median, mode","level":1,"domain":"eda","prereqs":["measurement-scales"],"note":"When each one lies. Median for skew, mode for categories, trimmed mean for outliers."},{"id":"dispersion","label":"Range, variance, SD, IQR, CV","level":1,"domain":"eda","prereqs":["central-tendency"],"note":"Spread measures and which are robust. Coefficient of variation for cross-scale comparison."},{"id":"percentiles","label":"Percentiles & quantiles","level":1,"domain":"eda","prereqs":["dispersion"],"note":"p50, p90, p99. Latency and spend are almost always reported at tails, not means."},{"id":"univariate-viz","label":"Univariate plots","level":1,"domain":"eda","prereqs":["measurement-scales"],"note":"Histogram, density, box, violin, ECDF. Bin width and axis choices change the story."},{"id":"bivariate-viz","label":"Bivariate plots","level":2,"domain":"eda","prereqs":["univariate-viz"],"note":"Scatter, hexbin, faceting, small multiples. Look before you model."},{"id":"skew-kurtosis","label":"Skewness & kurtosis","level":2,"domain":"eda","prereqs":["variance-moments","dispersion"],"note":"Shape beyond center and spread, and why they warn you about mean-based methods."},{"id":"outliers","label":"Outlier detection","level":2,"domain":"eda","prereqs":["percentiles","dispersion"],"note":"IQR fences, z-scores, robust MAD. Deciding to drop a point is a modeling choice."},{"id":"correlation-analysis","label":"Correlation analysis","level":2,"domain":"eda","prereqs":["covariance-correlation","bivariate-viz"],"note":"Pearson r, correlation matrices, Anscombe's quartet, attenuation from noise and range restriction."},{"id":"rank-correlation","label":"Spearman & Kendall","level":3,"domain":"eda","prereqs":["correlation-analysis","rank-methods"],"note":"Monotonic association without a linearity assumption. Robust to outliers and skew."},{"id":"contingency-tables","label":"Contingency tables","level":2,"domain":"eda","prereqs":["joint-probability","measurement-scales"],"note":"Cross-tabs, row and column percentages, marginal versus conditional distributions."},{"id":"simpsons-paradox","label":"Simpson's paradox & aggregation bias","level":3,"domain":"eda","prereqs":["contingency-tables","conditional-probability"],"note":"Aggregate trends can reverse within subgroups. Interview favorite and a real reporting hazard."},{"id":"data-cleaning","label":"Data cleaning & validation","level":1,"domain":"eda","prereqs":["measurement-scales"],"note":"Types, duplicates, ranges, referential checks, unit errors. Most analysis failures start here."},{"id":"missing-data","label":"Missing data mechanisms","level":3,"domain":"eda","prereqs":["data-cleaning","conditional-probability"],"note":"MCAR, MAR, MNAR. The mechanism decides whether dropping rows biases your answer."},{"id":"imputation","label":"Imputation methods","level":4,"domain":"eda","prereqs":["missing-data","multiple-regression"],"note":"Mean, regression, hot deck, MICE, and why multiple imputation fixes understated uncertainty."},{"id":"feature-transforms","label":"Scaling & transformations","level":2,"domain":"eda","prereqs":["univariate-viz","functions-notation"],"note":"Log, sqrt, Box-Cox, standardizing, binning. Fixes skew and puts variables on comparable scales."},{"id":"eda-workflow","label":"Structured EDA workflow","level":2,"domain":"eda","prereqs":["univariate-viz","data-cleaning"],"note":"A repeatable order of operations so you notice problems before they reach a model or a slide."},{"id":"population-sample","label":"Population vs sample","level":1,"domain":"est","prereqs":["measurement-scales"],"note":"Parameter versus statistic, target population versus frame. The first question in any study."},{"id":"sampling-methods","label":"Sampling designs","level":2,"domain":"est","prereqs":["population-sample","probability-axioms"],"note":"Simple random, stratified, cluster, systematic, multistage, and how each affects variance."},{"id":"sampling-bias","label":"Sampling bias & nonresponse","level":2,"domain":"est","prereqs":["sampling-methods"],"note":"Coverage, selection, survivorship, self-selection. Bigger n does not fix a biased frame."},{"id":"sampling-distribution","label":"Sampling distribution","level":3,"domain":"est","prereqs":["sampling-methods","random-variables","clt"],"note":"The distribution of a statistic across hypothetical repeated samples. The key mental model."},{"id":"standard-error","label":"Standard error","level":3,"domain":"est","prereqs":["sampling-distribution"],"note":"SD of an estimator, not of the data. Root-n scaling and what it means for sample size."},{"id":"point-estimation","label":"Point estimation","level":3,"domain":"est","prereqs":["sampling-distribution"],"note":"Estimator versus estimate. Properties you should always ask about before trusting a number."},{"id":"bias-variance-estimator","label":"Bias, variance & MSE of estimators","level":3,"domain":"est","prereqs":["point-estimation","expectation"],"note":"MSE splits into bias squared plus variance. Sometimes a biased estimator wins."},{"id":"consistency-efficiency","label":"Consistency & efficiency","level":4,"domain":"est","prereqs":["bias-variance-estimator","convergence-concepts"],"note":"Does the estimator converge, and does it use the data as well as possible."},{"id":"method-of-moments","label":"Method of moments","level":3,"domain":"est","prereqs":["variance-moments","point-estimation"],"note":"Match sample moments to population moments. Simple, fast, often a good starting value."},{"id":"mle","label":"Maximum likelihood estimation","level":3,"domain":"est","prereqs":["pmf-pdf","optimization-calculus","independence"],"note":"Pick parameters that make the observed data most probable. The default estimator in modern stats."},{"id":"sufficiency","label":"Sufficiency & likelihood principle","level":5,"domain":"est","prereqs":["mle","exponential-family"],"note":"Statistics that carry all the information about a parameter. Factorization theorem."},{"id":"fisher-information","label":"Fisher information","level":5,"domain":"est","prereqs":["mle","derivatives"],"note":"Curvature of the log-likelihood. More curvature means more precision, and it gives the SEs."},{"id":"cramer-rao","label":"Cramer-Rao lower bound","level":5,"domain":"est","prereqs":["fisher-information"],"note":"A floor on the variance of any unbiased estimator. Defines what efficient means."},{"id":"asymptotic-mle","label":"Asymptotic normality of MLE","level":5,"domain":"est","prereqs":["mle","clt","fisher-information"],"note":"Why almost every model reports estimate plus or minus 1.96 standard errors."},{"id":"confidence-intervals","label":"Confidence intervals","level":3,"domain":"est","prereqs":["standard-error","sampling-distribution"],"note":"Coverage is a property of the procedure, not of one interval. Say it correctly in interviews."},{"id":"finite-population","label":"Finite population correction & weights","level":4,"domain":"est","prereqs":["sampling-methods","standard-error"],"note":"Design weights, post-stratification, raking. Essential for survey and institutional data."},{"id":"bootstrap","label":"Bootstrap","level":3,"domain":"est","prereqs":["sampling-distribution","monte-carlo"],"note":"Resample the data to approximate the sampling distribution. Percentile, basic, and BCa intervals."},{"id":"jackknife","label":"Jackknife & influence","level":4,"domain":"est","prereqs":["bootstrap"],"note":"Leave-one-out resampling for bias and variance, and a link to influence functions."},{"id":"shrinkage-estimation","label":"Shrinkage & Stein estimation","level":5,"domain":"est","prereqs":["bias-variance-estimator","hierarchical-bayes"],"note":"Pulling noisy group estimates toward the grand mean beats separate estimates. Basis of partial pooling."},{"id":"hypothesis-framework","label":"Hypothesis testing framework","level":2,"domain":"inf","prereqs":["probability-axioms","population-sample"],"note":"Assume the null, compute a statistic, ask how surprising the data are under that assumption."},{"id":"null-alternative","label":"Null & alternative hypotheses","level":2,"domain":"inf","prereqs":["hypothesis-framework"],"note":"One-sided versus two-sided, and writing hypotheses about parameters rather than about data."},{"id":"test-statistic","label":"Test statistics & null distributions","level":3,"domain":"inf","prereqs":["null-alternative","sampling-distribution"],"note":"A statistic is only meaningful against its distribution under the null."},{"id":"p-value","label":"p-values","level":3,"domain":"inf","prereqs":["test-statistic"],"note":"P(data this extreme or more | null true). Not the probability the null is true."},{"id":"type-errors","label":"Type I & Type II error","level":3,"domain":"inf","prereqs":["hypothesis-framework"],"note":"Alpha, beta, and the tradeoff. Frame decisions as costs of each mistake."},{"id":"power","label":"Statistical power","level":3,"domain":"inf","prereqs":["type-errors","standard-error"],"note":"Probability of detecting a real effect. Underpowered studies produce inflated published effects."},{"id":"effect-size","label":"Effect sizes","level":3,"domain":"inf","prereqs":["power","dispersion"],"note":"Cohen's d, odds ratio, lift, relative risk. Significance without magnitude is not a finding."},{"id":"sample-size","label":"Sample size & MDE calculation","level":3,"domain":"inf","prereqs":["power","effect-size"],"note":"Solve for n before launching. Minimum detectable effect is the number stakeholders care about."},{"id":"ci-vs-test","label":"Confidence intervals vs tests","level":3,"domain":"inf","prereqs":["confidence-intervals","p-value"],"note":"Duality between intervals and tests, and why intervals communicate better to decision makers."},{"id":"one-sample-t","label":"One-sample t test","level":3,"domain":"inf","prereqs":["t-dist","test-statistic"],"note":"Testing a mean with unknown variance. Know the assumptions and their robustness."},{"id":"two-sample-t","label":"Two-sample t test","level":3,"domain":"inf","prereqs":["one-sample-t"],"note":"Comparing two group means, pooled versus unpooled variance."},{"id":"welch","label":"Welch's correction","level":3,"domain":"inf","prereqs":["two-sample-t"],"note":"Unequal variances and fractional degrees of freedom. Usually the safer default."},{"id":"paired-t","label":"Paired t test","level":3,"domain":"inf","prereqs":["one-sample-t"],"note":"Within-subject comparisons. Pairing removes between-subject variance and raises power."},{"id":"proportion-tests","label":"Proportion & two-proportion z tests","level":3,"domain":"inf","prereqs":["binomial","clt","test-statistic"],"note":"The default test behind most conversion rate experiments."},{"id":"chi-square-tests","label":"Chi-square goodness of fit & independence","level":3,"domain":"inf","prereqs":["chi-square-dist","contingency-tables"],"note":"Expected counts, degrees of freedom, and the small-cell rule of thumb."},{"id":"fishers-exact","label":"Fisher's exact test","level":4,"domain":"inf","prereqs":["hypergeometric","chi-square-tests"],"note":"Exact inference for small tables where chi-square approximation breaks down."},{"id":"variance-tests","label":"Tests for variance & normality","level":4,"domain":"inf","prereqs":["chi-square-dist","f-dist"],"note":"Levene, Bartlett, Shapiro-Wilk. Useful, but do not let assumption tests drive everything."},{"id":"anova-one-way","label":"One-way ANOVA","level":3,"domain":"inf","prereqs":["f-dist","two-sample-t"],"note":"Partition variance between and within groups. The omnibus test before pairwise comparisons."},{"id":"anova-two-way","label":"Two-way ANOVA & interactions","level":4,"domain":"inf","prereqs":["anova-one-way"],"note":"Main effects versus interaction, and balanced versus unbalanced designs."},{"id":"ancova","label":"ANCOVA","level":4,"domain":"inf","prereqs":["anova-one-way","multiple-regression"],"note":"Adjust group comparisons for covariates. The classical cousin of regression adjustment."},{"id":"repeated-measures","label":"Repeated measures ANOVA","level":4,"domain":"inf","prereqs":["anova-two-way","paired-t"],"note":"Correlated observations within subject, sphericity, and when to move to mixed models."},{"id":"multiple-comparisons","label":"Multiple comparisons problem","level":4,"domain":"inf","prereqs":["p-value","type-errors"],"note":"Family-wise error rate, Bonferroni, Holm. Twenty metrics means at least one false positive."},{"id":"fdr","label":"False discovery rate","level":4,"domain":"inf","prereqs":["multiple-comparisons"],"note":"Benjamini-Hochberg. The realistic control target when you test hundreds of hypotheses."},{"id":"post-hoc","label":"Post-hoc tests","level":4,"domain":"inf","prereqs":["anova-one-way","multiple-comparisons"],"note":"Tukey HSD, Dunnett, Scheffe. Which pairwise comparison procedure fits which design."},{"id":"likelihood-ratio-test","label":"Likelihood ratio test","level":5,"domain":"inf","prereqs":["mle","chi-square-dist"],"note":"Compare nested models via the likelihood. Wilks' theorem gives the asymptotic null."},{"id":"wald-score","label":"Wald & score tests","level":5,"domain":"inf","prereqs":["fisher-information","likelihood-ratio-test"],"note":"The other two members of the asymptotic trinity, and when they disagree."},{"id":"neyman-pearson","label":"Neyman-Pearson lemma","level":5,"domain":"inf","prereqs":["likelihood-ratio-test","type-errors"],"note":"The most powerful test for a simple null versus simple alternative. Theory behind optimal tests."},{"id":"ump-tests","label":"Uniformly most powerful tests","level":5,"domain":"inf","prereqs":["neyman-pearson"],"note":"Monotone likelihood ratio and when a single test is optimal across all alternatives."},{"id":"permutation-tests","label":"Permutation & randomization tests","level":4,"domain":"inf","prereqs":["hypothesis-framework","monte-carlo"],"note":"Build the null by shuffling labels. Few assumptions and very defensible in experiments."},{"id":"equivalence-tost","label":"Equivalence & non-inferiority tests","level":4,"domain":"inf","prereqs":["ci-vs-test"],"note":"Proving something is not worse. Absence of significance is not evidence of equivalence."},{"id":"sequential-testing","label":"Sequential & group sequential testing","level":5,"domain":"inf","prereqs":["hypothesis-framework","martingales","peeking"],"note":"Alpha spending, SPRT, O'Brien-Fleming. Lets you stop early without inflating error."},{"id":"always-valid","label":"Always-valid inference & e-values","level":5,"domain":"inf","prereqs":["sequential-testing"],"note":"Confidence sequences that stay valid under continuous monitoring. Used in modern experiment platforms."},{"id":"replication-crisis","label":"p-hacking, garden of forking paths & reproducibility","level":4,"domain":"inf","prereqs":["p-value","multiple-comparisons"],"note":"Pre-registration, HARKing, publication bias, and how to keep your own analysis honest."},{"id":"rank-methods","label":"Ranks & rank transforms","level":3,"domain":"nonpar","prereqs":["percentiles","cdf"],"note":"Replace values with ranks to gain robustness to outliers and non-normality."},{"id":"mann-whitney","label":"Mann-Whitney U / Wilcoxon rank sum","level":3,"domain":"nonpar","prereqs":["rank-methods","two-sample-t"],"note":"Two-group comparison without normality. Tests stochastic dominance, not exactly medians."},{"id":"wilcoxon-signed","label":"Wilcoxon signed rank","level":3,"domain":"nonpar","prereqs":["rank-methods","paired-t"],"note":"Paired comparison for symmetric but non-normal differences."},{"id":"kruskal-wallis","label":"Kruskal-Wallis","level":4,"domain":"nonpar","prereqs":["mann-whitney","anova-one-way"],"note":"Rank-based analogue of one-way ANOVA across three or more groups."},{"id":"friedman","label":"Friedman test","level":4,"domain":"nonpar","prereqs":["kruskal-wallis","repeated-measures"],"note":"Rank-based repeated measures across blocks."},{"id":"ks-test","label":"Kolmogorov-Smirnov test","level":4,"domain":"nonpar","prereqs":["cdf","hypothesis-framework"],"note":"Compare two ECDFs or a sample to a reference. Widely reused for data drift detection."},{"id":"anderson-darling","label":"Anderson-Darling & Cramer-von Mises","level":4,"domain":"nonpar","prereqs":["ks-test"],"note":"Tail-sensitive alternatives to KS when the tails are what matter."},{"id":"kde","label":"Kernel density estimation","level":4,"domain":"nonpar","prereqs":["pmf-pdf","univariate-viz"],"note":"Smoothing a sample into a density. Bandwidth choice is the whole game."},{"id":"splines-loess","label":"Splines & LOESS","level":4,"domain":"nonpar","prereqs":["kde","multiple-regression"],"note":"Flexible curves without a global functional form. Knots, degrees of freedom, and smoothing penalties."},{"id":"bootstrap-hypothesis","label":"Bootstrap hypothesis tests","level":4,"domain":"nonpar","prereqs":["bootstrap","permutation-tests"],"note":"Resampling under the null for statistics with no clean analytic distribution."},{"id":"simple-regression","label":"Simple linear regression","level":2,"domain":"reg","prereqs":["correlation-analysis","bivariate-viz"],"note":"One predictor, slope and intercept, fitted values and residuals. Interpretation before mechanics."},{"id":"least-squares","label":"Least squares & the normal equations","level":3,"domain":"reg","prereqs":["simple-regression","vectors-matrices","optimization-calculus","conditional-expectation"],"note":"Minimize squared residuals, geometry of projection, the hat matrix."},{"id":"multiple-regression","label":"Multiple linear regression","level":3,"domain":"reg","prereqs":["least-squares"],"note":"Holding other variables constant, partial slopes, and the Frisch-Waugh intuition."},{"id":"dummy-coding","label":"Categorical predictors & encoding","level":2,"domain":"reg","prereqs":["measurement-scales","simple-regression"],"note":"Dummy variables, reference levels, the dummy variable trap, one-hot versus effect coding."},{"id":"regression-assumptions","label":"Regression assumptions","level":3,"domain":"reg","prereqs":["multiple-regression"],"note":"Linearity, independence, homoskedasticity, normal errors. Know which ones actually matter and when."},{"id":"residual-diagnostics","label":"Residual diagnostics","level":3,"domain":"reg","prereqs":["regression-assumptions"],"note":"Residual versus fitted, QQ plot, scale-location. Diagnose before you defend a model."},{"id":"r-squared","label":"R-squared, adjusted R-squared & F test","level":3,"domain":"reg","prereqs":["multiple-regression","f-dist"],"note":"Variance explained, why R-squared never decreases, and overall model significance."},{"id":"interpretation-inference","label":"Coefficient inference & interpretation","level":3,"domain":"reg","prereqs":["multiple-regression","confidence-intervals"],"note":"Standard errors, t tests, intervals for slopes, and units. The part interviewers probe hardest."},{"id":"multicollinearity","label":"Multicollinearity & VIF","level":3,"domain":"reg","prereqs":["multiple-regression","linear-independence-rank"],"note":"Correlated predictors inflate standard errors without hurting prediction."},{"id":"heteroskedasticity","label":"Heteroskedasticity","level":4,"domain":"reg","prereqs":["residual-diagnostics"],"note":"Non-constant error variance. Coefficients stay unbiased, standard errors do not."},{"id":"robust-se","label":"Robust & clustered standard errors","level":4,"domain":"reg","prereqs":["heteroskedasticity"],"note":"Huber-White sandwich estimators and clustering when observations group together."},{"id":"wls","label":"Weighted & generalized least squares","level":4,"domain":"reg","prereqs":["heteroskedasticity","quadratic-forms"],"note":"Reweight by known variance structure, including correlated errors."},{"id":"influence-leverage","label":"Leverage, influence & Cook's distance","level":4,"domain":"reg","prereqs":["residual-diagnostics","least-squares"],"note":"Which single rows are quietly driving your coefficients."},{"id":"gauss-markov","label":"Gauss-Markov theorem","level":4,"domain":"reg","prereqs":["least-squares","bias-variance-estimator"],"note":"OLS is BLUE under stated conditions. Understanding the conditions is the useful part."},{"id":"polynomial-interactions","label":"Nonlinear terms & interactions","level":3,"domain":"reg","prereqs":["multiple-regression","dummy-coding"],"note":"Polynomials, log-log elasticities, interaction terms, and centering to keep them interpretable."},{"id":"model-selection-criteria","label":"AIC, BIC & model selection","level":4,"domain":"reg","prereqs":["mle","r-squared"],"note":"Penalized likelihood, nested versus non-nested comparison, and the danger of stepwise selection."},{"id":"ridge","label":"Ridge regression","level":4,"domain":"reg","prereqs":["multiple-regression","convex-optimization","bias-variance-tradeoff"],"note":"L2 penalty trades a little bias for much lower variance under collinearity."},{"id":"lasso-elasticnet","label":"Lasso & elastic net","level":4,"domain":"reg","prereqs":["ridge"],"note":"L1 sparsity for selection, elastic net for correlated groups, and the regularization path."},{"id":"logistic-regression","label":"Logistic regression","level":3,"domain":"reg","prereqs":["multiple-regression","mle","bernoulli"],"note":"Log odds, odds ratios, separation, and why interpretation differs from linear regression."},{"id":"glm-framework","label":"Generalized linear models","level":4,"domain":"reg","prereqs":["logistic-regression","exponential-family"],"note":"Random component, link function, linear predictor. One framework for many response types."},{"id":"poisson-regression","label":"Poisson & rate regression","level":4,"domain":"reg","prereqs":["glm-framework","poisson-dist"],"note":"Counts with offsets for exposure, and testing for overdispersion."},{"id":"negbinom-regression","label":"Negative binomial & zero-inflated models","level":5,"domain":"reg","prereqs":["poisson-regression","geometric-negbinom","mixture-distributions"],"note":"Overdispersed and excess-zero counts, which real behavioral data produce constantly."},{"id":"ordinal-multinomial-reg","label":"Multinomial & ordinal regression","level":4,"domain":"reg","prereqs":["logistic-regression","multinomial"],"note":"More than two outcome classes, proportional odds, and its assumption."},{"id":"quantile-regression","label":"Quantile regression","level":5,"domain":"reg","prereqs":["quantile-function","convex-optimization","multiple-regression"],"note":"Model the median or p90 instead of the mean. Ideal for latency and income."},{"id":"nonlinear-regression","label":"Nonlinear least squares","level":4,"domain":"reg","prereqs":["optimization-calculus","multiple-regression"],"note":"Fitting curves with parameters inside a nonlinear function, including growth and decay models."},{"id":"gam","label":"Generalized additive models","level":5,"domain":"reg","prereqs":["splines-loess","glm-framework"],"note":"Smooth functions of each predictor with GLM structure. Flexible and still interpretable."},{"id":"mixed-models","label":"Mixed effects & multilevel models","level":5,"domain":"reg","prereqs":["multiple-regression","multivariate-normal","repeated-measures"],"note":"Random intercepts and slopes for nested data: students in schools, users in cities."},{"id":"gee","label":"Generalized estimating equations","level":5,"domain":"reg","prereqs":["glm-framework","mixed-models"],"note":"Population-averaged effects with a working correlation structure for clustered data."},{"id":"panel-fixed-effects","label":"Panel data & fixed effects","level":4,"domain":"reg","prereqs":["multiple-regression","robust-se"],"note":"Within versus between variation, entity and time fixed effects, and what they absorb."},{"id":"bayesian-thinking","label":"Bayesian thinking","level":3,"domain":"bayes","prereqs":["bayes-theorem"],"note":"Probability as belief about parameters. Contrast with the frequentist repeated sampling view."},{"id":"prior-likelihood-posterior","label":"Prior, likelihood, posterior","level":3,"domain":"bayes","prereqs":["bayesian-thinking","mle"],"note":"Posterior is proportional to likelihood times prior. Everything else is computation."},{"id":"conjugate-priors","label":"Conjugate priors","level":4,"domain":"bayes","prereqs":["prior-likelihood-posterior","beta-dist","gamma-dist"],"note":"Beta-binomial and gamma-Poisson give closed-form posteriors you can compute in your head."},{"id":"prior-choice","label":"Prior choice & sensitivity","level":4,"domain":"bayes","prereqs":["prior-likelihood-posterior"],"note":"Informative, weakly informative, and flat priors, plus checking how much the prior drives conclusions."},{"id":"credible-intervals","label":"Credible intervals & posterior summaries","level":4,"domain":"bayes","prereqs":["prior-likelihood-posterior","quantile-function"],"note":"A direct probability statement about a parameter, which is what stakeholders think a CI means."},{"id":"bayes-factors","label":"Bayes factors & model comparison","level":5,"domain":"bayes","prereqs":["prior-likelihood-posterior","likelihood-ratio-test"],"note":"Evidence ratios between models, marginal likelihoods, and their sensitivity to priors."},{"id":"mcmc","label":"MCMC fundamentals","level":5,"domain":"bayes","prereqs":["markov-chains","monte-carlo"],"note":"Sample from a posterior you cannot integrate. Burn-in, mixing, R-hat, effective sample size."},{"id":"metropolis","label":"Metropolis-Hastings","level":5,"domain":"bayes","prereqs":["mcmc"],"note":"Propose and accept or reject. The simplest general-purpose posterior sampler."},{"id":"gibbs","label":"Gibbs sampling","level":5,"domain":"bayes","prereqs":["mcmc","conditional-probability"],"note":"Cycle through full conditionals. Natural fit for hierarchical and conjugate structures."},{"id":"hmc","label":"Hamiltonian Monte Carlo & NUTS","level":5,"domain":"bayes","prereqs":["metropolis","multivariable-calculus"],"note":"Gradient-guided proposals. What Stan and PyMC actually run under the hood."},{"id":"variational-inference","label":"Variational inference","level":5,"domain":"bayes","prereqs":["kl-divergence","convex-optimization","jensen"],"note":"Approximate the posterior by optimization instead of sampling. Fast and scalable, but biased."},{"id":"hierarchical-bayes","label":"Hierarchical & partial pooling models","level":5,"domain":"bayes","prereqs":["conjugate-priors","mixed-models"],"note":"Share strength across groups. The right answer for small-sample per-segment estimates."},{"id":"empirical-bayes","label":"Empirical Bayes","level":5,"domain":"bayes","prereqs":["hierarchical-bayes","mle"],"note":"Estimate the prior from the data. Practical for ranking and rating systems."},{"id":"posterior-predictive","label":"Posterior predictive checks","level":5,"domain":"bayes","prereqs":["prior-likelihood-posterior","monte-carlo"],"note":"Simulate replicated data and compare to reality. The best Bayesian model check."},{"id":"bayesian-ab","label":"Bayesian A/B testing","level":4,"domain":"bayes","prereqs":["conjugate-priors","ab-testing"],"note":"Probability B beats A, expected loss, and how it differs from a p-value decision rule."},{"id":"probabilistic-programming","label":"Probabilistic programming","level":5,"domain":"bayes","prereqs":["mcmc","hierarchical-bayes"],"note":"Stan, PyMC, or NumPyro. Writing the generative model and letting the sampler do the rest."},{"id":"covariance-matrix","label":"Covariance & correlation matrices","level":3,"domain":"mv","prereqs":["covariance-correlation","vectors-matrices"],"note":"Structure of multivariate spread, positive semidefiniteness, and standardization."},{"id":"mahalanobis","label":"Mahalanobis distance","level":4,"domain":"mv","prereqs":["covariance-matrix","quadratic-forms"],"note":"Distance that accounts for correlation and scale. Multivariate outlier detection."},{"id":"pca","label":"Principal component analysis","level":4,"domain":"mv","prereqs":["matrix-decomposition","covariance-matrix"],"note":"Orthogonal directions of maximum variance, scree plots, loadings, and what scaling does to results."},{"id":"factor-analysis","label":"Factor analysis","level":5,"domain":"mv","prereqs":["pca","mle"],"note":"Latent factors that generate observed correlations. Different goal from PCA despite the similarity."},{"id":"cca","label":"Canonical correlation analysis","level":5,"domain":"mv","prereqs":["pca","matrix-decomposition"],"note":"Maximally correlated linear combinations across two blocks of variables."},{"id":"lda-classifier","label":"Linear & quadratic discriminant analysis","level":4,"domain":"mv","prereqs":["multivariate-normal","bayes-theorem"],"note":"Generative classification with normal class densities. LDA versus QDA is a variance tradeoff."},{"id":"manova","label":"MANOVA","level":5,"domain":"mv","prereqs":["anova-two-way","multivariate-normal"],"note":"Group differences across several correlated outcomes at once."},{"id":"kmeans","label":"K-means clustering","level":3,"domain":"mv","prereqs":["dispersion","vectors-matrices"],"note":"Within-cluster sum of squares, initialization, elbow and silhouette for choosing k."},{"id":"hierarchical-clustering","label":"Hierarchical clustering","level":3,"domain":"mv","prereqs":["kmeans"],"note":"Linkage methods and dendrograms. Useful when you cannot fix k in advance."},{"id":"density-clustering","label":"DBSCAN & density clustering","level":4,"domain":"mv","prereqs":["kmeans","kde"],"note":"Finds arbitrary shapes and labels noise, at the cost of two sensitive parameters."},{"id":"cluster-validation","label":"Cluster validation","level":4,"domain":"mv","prereqs":["kmeans","hierarchical-clustering"],"note":"Silhouette, gap statistic, stability under resampling. Clusters always appear, so validate them."},{"id":"gmm-em","label":"Gaussian mixture models & EM","level":5,"domain":"mv","prereqs":["mixture-distributions","em-algorithm"],"note":"Soft clustering with likelihood. The canonical latent variable model."},{"id":"mds","label":"Multidimensional scaling","level":4,"domain":"mv","prereqs":["matrix-decomposition","mahalanobis"],"note":"Place points in low dimensions preserving pairwise distances."},{"id":"tsne-umap","label":"t-SNE & UMAP","level":4,"domain":"mv","prereqs":["pca","kl-divergence"],"note":"Nonlinear embeddings for visual structure. Distances and cluster sizes are not trustworthy."},{"id":"sem","label":"Structural equation modeling","level":5,"domain":"mv","prereqs":["factor-analysis","dag"],"note":"Latent constructs plus a path model. Common in social science and survey research."},{"id":"ts-components","label":"Time series components","level":2,"domain":"ts","prereqs":["univariate-viz"],"note":"Trend, seasonality, cycle, noise, and additive versus multiplicative decomposition."},{"id":"stationarity","label":"Stationarity","level":3,"domain":"ts","prereqs":["ts-components","expectation"],"note":"Constant mean, variance, and autocovariance. Most classical methods assume it."},{"id":"acf-pacf","label":"Autocorrelation & partial autocorrelation","level":3,"domain":"ts","prereqs":["covariance-correlation","stationarity"],"note":"Reading ACF and PACF plots is how you pick AR and MA orders."},{"id":"unit-root","label":"Differencing & unit root tests","level":4,"domain":"ts","prereqs":["stationarity","hypothesis-framework"],"note":"ADF and KPSS, random walks, and the risk of spurious regression between trending series."},{"id":"exponential-smoothing","label":"Exponential smoothing & Holt-Winters","level":3,"domain":"ts","prereqs":["ts-components"],"note":"Weighted recent history with level, trend, and seasonal terms. Strong practical baseline."},{"id":"arma","label":"AR & MA models","level":4,"domain":"ts","prereqs":["acf-pacf","stochastic-processes"],"note":"Regression on lags versus regression on past shocks, and invertibility."},{"id":"arima","label":"ARIMA","level":4,"domain":"ts","prereqs":["arma","unit-root"],"note":"Integrated models for nonstationary series, Box-Jenkins identification and diagnostics."},{"id":"sarima","label":"Seasonal ARIMA & regressors","level":4,"domain":"ts","prereqs":["arima"],"note":"Seasonal lags and exogenous predictors for calendar effects and promotions."},{"id":"forecast-evaluation","label":"Forecast evaluation & backtesting","level":3,"domain":"ts","prereqs":["ts-components","regression-metrics"],"note":"Rolling origin validation, MAPE and sMAPE traps, and always beating a naive baseline."},{"id":"garch","label":"ARCH & GARCH volatility","level":5,"domain":"ts","prereqs":["arima","variance-moments"],"note":"Model variance that clusters over time. Standard in finance and risk."},{"id":"var-model","label":"Vector autoregression","level":5,"domain":"ts","prereqs":["arima","vectors-matrices"],"note":"Multiple interdependent series, impulse responses, and Granger causality."},{"id":"cointegration","label":"Cointegration & error correction","level":5,"domain":"ts","prereqs":["var-model","unit-root"],"note":"Long-run equilibrium between nonstationary series that drift together."},{"id":"state-space","label":"State space & Kalman filter","level":5,"domain":"ts","prereqs":["var-model","multivariate-normal"],"note":"Latent state plus observation noise, recursive updating, and structural time series."},{"id":"spectral-analysis","label":"Spectral analysis","level":5,"domain":"ts","prereqs":["integrals","acf-pacf"],"note":"Frequency domain view: periodograms and how to spot hidden cycles."},{"id":"causal-impact-ts","label":"Interrupted time series & causal impact","level":5,"domain":"ts","prereqs":["state-space","diff-in-diff"],"note":"Estimate the effect of a launch when you could not randomize, using a counterfactual forecast."},{"id":"study-designs","label":"Experimental vs observational studies","level":2,"domain":"causal","prereqs":["population-sample"],"note":"What randomization buys you, and what an observational design must argue instead."},{"id":"randomization","label":"Randomization & assignment units","level":2,"domain":"causal","prereqs":["study-designs","probability-axioms"],"note":"Randomize users, sessions, or clusters. The unit choice determines the analysis unit."},{"id":"control-groups","label":"Control, treatment & blinding","level":2,"domain":"causal","prereqs":["randomization"],"note":"Holdouts, placebo effects, and contamination between arms."},{"id":"blocking","label":"Blocking & stratified randomization","level":3,"domain":"causal","prereqs":["randomization","sampling-methods"],"note":"Balance known nuisance factors up front to cut variance and improve power."},{"id":"factorial-designs","label":"Factorial designs","level":4,"domain":"causal","prereqs":["anova-two-way","blocking"],"note":"Test several factors at once and estimate interactions efficiently."},{"id":"fractional-factorial","label":"Fractional factorial & screening","level":5,"domain":"causal","prereqs":["factorial-designs"],"note":"Resolution and aliasing when you cannot afford all combinations."},{"id":"latin-square","label":"Latin square & crossover designs","level":4,"domain":"causal","prereqs":["blocking","repeated-measures"],"note":"Control two nuisance directions at once, plus carryover concerns in crossovers."},{"id":"response-surface","label":"Response surface methodology","level":5,"domain":"causal","prereqs":["factorial-designs","nonlinear-regression"],"note":"Optimizing a continuous response over factor settings. Industrial and pricing applications."},{"id":"ab-testing","label":"A/B testing end to end","level":3,"domain":"causal","prereqs":["randomization","proportion-tests","sample-size"],"note":"Hypothesis, metric, unit, power, duration, decision rule. The core big tech interview loop."},{"id":"metric-selection","label":"Primary, secondary & guardrail metrics","level":4,"domain":"causal","prereqs":["ab-testing","metric-design"],"note":"One decision metric, a few diagnostics, and guardrails that block harmful wins."},{"id":"srm","label":"Sample ratio mismatch & A/A tests","level":4,"domain":"causal","prereqs":["ab-testing","chi-square-tests"],"note":"The first sanity check. A broken split invalidates everything downstream."},{"id":"novelty-effects","label":"Novelty, primacy & seasonality effects","level":4,"domain":"causal","prereqs":["ab-testing","ts-components"],"note":"Effects that decay or grow over the test window, and why one week may mislead."},{"id":"variance-reduction","label":"CUPED & variance reduction","level":5,"domain":"causal","prereqs":["ab-testing","multiple-regression","covariance-correlation"],"note":"Use pre-experiment data to cut variance and reach significance with fewer users."},{"id":"heterogeneous-effects","label":"Heterogeneous treatment effects","level":5,"domain":"causal","prereqs":["ate-att","causal-ml"],"note":"Who responds differently, and how to segment without fishing for a subgroup win."},{"id":"interference","label":"Interference, SUTVA & network effects","level":5,"domain":"causal","prereqs":["ab-testing","potential-outcomes"],"note":"When one user's treatment affects another. Marketplaces and social products break naive A/B."},{"id":"switchback","label":"Switchback & cluster randomized designs","level":5,"domain":"causal","prereqs":["interference","blocking"],"note":"Randomize time slices or regions when individual randomization leaks."},{"id":"bandits","label":"Multi-armed bandits","level":5,"domain":"causal","prereqs":["bayesian-thinking","ab-testing"],"note":"Explore versus exploit, Thompson sampling, and when adaptive allocation beats a fixed test."},{"id":"peeking","label":"Peeking & sequential experiment analysis","level":4,"domain":"causal","prereqs":["ab-testing","multiple-comparisons"],"note":"Continuous monitoring inflates false positives unless the method is designed for it."},{"id":"potential-outcomes","label":"Potential outcomes framework","level":4,"domain":"causal","prereqs":["expectation","study-designs"],"note":"Y(1) and Y(0), the fundamental problem of causal inference, and what ignorability assumes."},{"id":"ate-att","label":"ATE, ATT & CATE","level":4,"domain":"causal","prereqs":["potential-outcomes"],"note":"Different causal estimands answer different business questions. Name yours explicitly."},{"id":"confounding","label":"Confounding, colliders & selection bias","level":3,"domain":"causal","prereqs":["conditional-probability","simpsons-paradox"],"note":"Controlling for the wrong variable can create bias rather than remove it."},{"id":"dag","label":"Causal DAGs","level":4,"domain":"causal","prereqs":["confounding","independence"],"note":"Draw the assumptions before touching the data. d-separation tells you what to adjust for."},{"id":"backdoor","label":"Backdoor & frontdoor criteria","level":5,"domain":"causal","prereqs":["dag","potential-outcomes"],"note":"Formal rules for which adjustment set identifies a causal effect."},{"id":"propensity-scores","label":"Propensity scores","level":5,"domain":"causal","prereqs":["logistic-regression","potential-outcomes"],"note":"Reduce many covariates to one balancing score, then check balance rather than fit."},{"id":"matching","label":"Matching methods","level":5,"domain":"causal","prereqs":["propensity-scores","mahalanobis"],"note":"Nearest neighbor, caliper, exact, and coarsened exact matching, with common support checks."},{"id":"ipw","label":"Inverse probability weighting","level":5,"domain":"causal","prereqs":["propensity-scores"],"note":"Reweight to a pseudo-population, and watch for extreme weights."},{"id":"doubly-robust","label":"Doubly robust estimation","level":5,"domain":"causal","prereqs":["ipw","multiple-regression"],"note":"Combine outcome and treatment models so one of the two can be wrong."},{"id":"diff-in-diff","label":"Difference-in-differences","level":4,"domain":"causal","prereqs":["potential-outcomes","panel-fixed-effects"],"note":"Parallel trends, event study plots, and staggered adoption problems."},{"id":"rdd","label":"Regression discontinuity","level":5,"domain":"causal","prereqs":["diff-in-diff","splines-loess"],"note":"Exploit a cutoff rule. Bandwidth, local linear fits, and manipulation tests."},{"id":"iv","label":"Instrumental variables & 2SLS","level":5,"domain":"causal","prereqs":["multiple-regression","confounding","dag"],"note":"Relevance, exclusion, monotonicity, LATE, and the weak instrument problem."},{"id":"synthetic-control","label":"Synthetic control","level":5,"domain":"causal","prereqs":["diff-in-diff"],"note":"Build a weighted comparison unit when only one unit is treated."},{"id":"mediation","label":"Mediation & moderation","level":4,"domain":"causal","prereqs":["multiple-regression","dag"],"note":"Direct versus indirect effects, and why naive mediation regressions are often biased."},{"id":"causal-ml","label":"Causal machine learning","level":5,"domain":"causal","prereqs":["doubly-robust","random-forest"],"note":"Causal forests, meta-learners, and double machine learning for effect estimation."},{"id":"supervised-unsupervised","label":"Supervised vs unsupervised learning","level":2,"domain":"ml","prereqs":["measurement-scales"],"note":"Prediction versus structure discovery, and how each is evaluated."},{"id":"train-test-split","label":"Train, validation & test splits","level":2,"domain":"ml","prereqs":["supervised-unsupervised","sampling-methods"],"note":"Holdout discipline, and why time-ordered data needs a time-ordered split."},{"id":"cross-validation","label":"Cross-validation","level":3,"domain":"ml","prereqs":["train-test-split"],"note":"K-fold, stratified, grouped, nested, and time series CV. Leakage hides here."},{"id":"bias-variance-tradeoff","label":"Bias-variance tradeoff","level":3,"domain":"ml","prereqs":["bias-variance-estimator","cross-validation"],"note":"Underfitting versus overfitting, expressed as a decomposition of expected prediction error."},{"id":"overfitting-regularization","label":"Overfitting & regularization","level":3,"domain":"ml","prereqs":["bias-variance-tradeoff"],"note":"Penalties, early stopping, and simplicity as a variance control strategy."},{"id":"data-leakage","label":"Data leakage","level":3,"domain":"ml","prereqs":["cross-validation","train-test-split"],"note":"Target leakage and preprocessing leakage. The most common cause of too-good validation scores."},{"id":"loss-functions","label":"Loss functions","level":3,"domain":"ml","prereqs":["expectation","optimization-calculus"],"note":"Squared, absolute, log loss, hinge, Huber, and what each implies about the conditional distribution."},{"id":"gradient-descent","label":"Gradient descent & variants","level":3,"domain":"ml","prereqs":["derivatives","loss-functions"],"note":"Learning rate, batch versus stochastic, momentum, convergence behavior."},{"id":"regression-metrics","label":"Regression metrics","level":2,"domain":"ml","prereqs":["dispersion"],"note":"RMSE, MAE, MAPE, R-squared. Each one encodes a different attitude toward large errors."},{"id":"classification-metrics","label":"Confusion matrix & classification metrics","level":2,"domain":"ml","prereqs":["contingency-tables"],"note":"Accuracy, precision, recall, F1, specificity. Accuracy alone is a trap under imbalance."},{"id":"roc-pr","label":"ROC-AUC & precision-recall curves","level":3,"domain":"ml","prereqs":["classification-metrics"],"note":"Threshold-free evaluation, and why PR curves are better when positives are rare."},{"id":"threshold-selection","label":"Threshold selection & cost-sensitive decisions","level":3,"domain":"ml","prereqs":["roc-pr","type-errors"],"note":"Turn scores into decisions using the actual cost of each error type."},{"id":"calibration","label":"Probability calibration","level":4,"domain":"ml","prereqs":["logistic-regression","roc-pr"],"note":"Reliability curves, Brier score, Platt scaling, isotonic regression. Ranking well is not being calibrated."},{"id":"class-imbalance","label":"Class imbalance","level":3,"domain":"ml","prereqs":["classification-metrics"],"note":"Resampling, class weights, and why oversampling before CV corrupts your estimates."},{"id":"knn","label":"K nearest neighbors","level":2,"domain":"ml","prereqs":["vectors-matrices","supervised-unsupervised"],"note":"Distance-based prediction, the effect of k, and the curse of dimensionality."},{"id":"naive-bayes","label":"Naive Bayes","level":3,"domain":"ml","prereqs":["bayes-theorem","independence"],"note":"Strong independence assumption that still works surprisingly well for text."},{"id":"decision-trees","label":"Decision trees","level":3,"domain":"ml","prereqs":["entropy","supervised-unsupervised"],"note":"Recursive splits by Gini or entropy, pruning, and their high variance."},{"id":"random-forest","label":"Bagging & random forests","level":4,"domain":"ml","prereqs":["decision-trees","bootstrap"],"note":"Average many decorrelated trees, plus out-of-bag error and permutation importance."},{"id":"boosting","label":"Boosting & gradient boosting","level":4,"domain":"ml","prereqs":["random-forest","gradient-descent"],"note":"Sequentially fit residuals. XGBoost and LightGBM still win most tabular problems."},{"id":"svm","label":"Support vector machines","level":4,"domain":"ml","prereqs":["convex-optimization","vectors-matrices"],"note":"Maximum margin, soft margin cost, and support vectors as the only points that matter."},{"id":"kernel-methods","label":"Kernel methods & Gaussian processes","level":5,"domain":"ml","prereqs":["svm","multivariate-normal"],"note":"Implicit high-dimensional features, and GPs as distributions over functions with uncertainty."},{"id":"neural-nets","label":"Neural network fundamentals","level":4,"domain":"ml","prereqs":["gradient-descent","loss-functions"],"note":"Layers, activations, backpropagation, and regularization by dropout and weight decay."},{"id":"feature-engineering","label":"Feature engineering & selection","level":3,"domain":"ml","prereqs":["feature-transforms","multiple-regression"],"note":"Domain features, encodings, filter and wrapper and embedded selection methods."},{"id":"hyperparameter-tuning","label":"Hyperparameter tuning","level":3,"domain":"ml","prereqs":["cross-validation"],"note":"Grid, random, and Bayesian optimization, with a clean nested validation scheme."},{"id":"ensembling","label":"Stacking & ensembling","level":4,"domain":"ml","prereqs":["boosting","cross-validation"],"note":"Blend diverse models with out-of-fold predictions to avoid leaking into the meta-learner."},{"id":"interpretability","label":"Model interpretability","level":4,"domain":"ml","prereqs":["random-forest","interpretation-inference"],"note":"Partial dependence, ICE, permutation importance, SHAP, and their correlation pitfalls."},{"id":"learning-curves","label":"Learning & validation curves","level":3,"domain":"ml","prereqs":["bias-variance-tradeoff"],"note":"Diagnose whether more data or a different model is what you actually need."},{"id":"slt","label":"Statistical learning theory","level":5,"domain":"ml","prereqs":["convergence-concepts","bias-variance-tradeoff"],"note":"VC dimension, Rademacher complexity, and generalization bounds behind the practice."},{"id":"conformal-prediction","label":"Conformal prediction","level":5,"domain":"ml","prereqs":["quantile-function","cross-validation"],"note":"Distribution-free prediction intervals with finite-sample coverage guarantees."},{"id":"drift-monitoring","label":"Model monitoring & drift detection","level":4,"domain":"ml","prereqs":["ks-test","classification-metrics"],"note":"Covariate shift, label shift, concept drift, and PSI in production dashboards."},{"id":"recsys-ranking","label":"Ranking & recommender evaluation","level":4,"domain":"ml","prereqs":["roc-pr","ab-testing"],"note":"NDCG, MAP, hit rate, position bias, and offline versus online metric disagreement."},{"id":"rng","label":"Random number generation","level":2,"domain":"comp","prereqs":["uniform"],"note":"Pseudorandom generators, seeds, and reproducibility of any simulation you report."},{"id":"monte-carlo","label":"Monte Carlo simulation","level":3,"domain":"comp","prereqs":["rng","lln"],"note":"Estimate anything you can simulate, with error shrinking at root n."},{"id":"inverse-transform","label":"Inverse transform sampling","level":4,"domain":"comp","prereqs":["quantile-function","rng"],"note":"Turn uniforms into any distribution with an invertible CDF."},{"id":"rejection-sampling","label":"Rejection & importance sampling","level":5,"domain":"comp","prereqs":["monte-carlo","expectation"],"note":"Sample hard distributions with a proposal, and reweight to fix the mismatch."},{"id":"em-algorithm","label":"EM algorithm","level":5,"domain":"comp","prereqs":["mle","jensen"],"note":"Alternate expectation and maximization for latent variables and missing data."},{"id":"newton-optimization","label":"Newton-Raphson & IRLS","level":4,"domain":"comp","prereqs":["optimization-calculus","mle"],"note":"How GLM fitting actually converges, and what a non-convergence warning means."},{"id":"simulation-study","label":"Designing a simulation study","level":4,"domain":"comp","prereqs":["monte-carlo","power"],"note":"Simulate to check power, coverage, and bias of your own analysis plan before running it."},{"id":"reproducible-workflow","label":"Reproducible analysis workflow","level":2,"domain":"comp","prereqs":["data-cleaning"],"note":"Seeds, version control, environments, notebooks that run top to bottom."},{"id":"big-data-stats","label":"Statistics at scale","level":5,"domain":"comp","prereqs":["monte-carlo","standard-error","spark-distributed"],"note":"Sketching, approximate quantiles, streaming variance, and sampling instead of scanning."},{"id":"censoring","label":"Censoring & truncation","level":4,"domain":"surv","prereqs":["random-variables","missing-data"],"note":"Right, left, and interval censoring. Ignoring it silently biases every duration estimate."},{"id":"hazard-survival","label":"Survival & hazard functions","level":4,"domain":"surv","prereqs":["cdf","censoring"],"note":"S(t), h(t), cumulative hazard, and how they translate into each other."},{"id":"kaplan-meier","label":"Kaplan-Meier estimator","level":4,"domain":"surv","prereqs":["hazard-survival"],"note":"Nonparametric survival curves with risk sets and censoring marks."},{"id":"log-rank","label":"Log-rank test","level":4,"domain":"surv","prereqs":["kaplan-meier","chi-square-tests"],"note":"Compare survival curves between groups over the whole follow-up window."},{"id":"cox-model","label":"Cox proportional hazards","level":5,"domain":"surv","prereqs":["hazard-survival","mle","multiple-regression"],"note":"Semiparametric hazard ratios, partial likelihood, and testing proportional hazards."},{"id":"parametric-survival","label":"Parametric survival models","level":5,"domain":"surv","prereqs":["cox-model","weibull"],"note":"Weibull and AFT models when you need to extrapolate beyond observed follow-up."},{"id":"competing-risks","label":"Competing risks & time-varying covariates","level":5,"domain":"surv","prereqs":["cox-model"],"note":"Cumulative incidence when several exit types compete, and covariates that change over time."},{"id":"churn-ltv","label":"Churn, retention & lifetime value modeling","level":4,"domain":"surv","prereqs":["kaplan-meier","logistic-regression"],"note":"Retention curves, survival-based LTV, and cohort framing that product teams accept."},{"id":"stat-communication","label":"Communicating statistical results","level":2,"domain":"applied","prereqs":["central-tendency"],"note":"Lead with the decision, quantify uncertainty in plain words, and name your assumptions."},{"id":"viz-principles","label":"Visualization principles","level":2,"domain":"applied","prereqs":["univariate-viz","stat-communication"],"note":"Encoding choice, axis honesty, color for the colorblind, and annotation over decoration."},{"id":"metric-design","label":"Metric design","level":3,"domain":"applied","prereqs":["stat-communication","measurement-scales"],"note":"Definition, aggregation level, sensitivity, gameability, and the north star versus input metrics."},{"id":"uncertainty-reporting","label":"Reporting uncertainty to decision makers","level":3,"domain":"applied","prereqs":["confidence-intervals","stat-communication"],"note":"Intervals, ranges, and scenario framing instead of a single confident number."},{"id":"correlation-causation-comms","label":"Explaining correlation vs causation","level":3,"domain":"applied","prereqs":["confounding","stat-communication"],"note":"Say what the design can and cannot support, without killing the stakeholder's momentum."},{"id":"analysis-scoping","label":"Scoping an ambiguous analysis request","level":4,"domain":"applied","prereqs":["metric-design","study-designs"],"note":"Turn a vague ask into a question, an estimand, a data plan, and a decision rule."},{"id":"experiment-culture","label":"Experiment review & decision culture","level":5,"domain":"applied","prereqs":["ab-testing","replication-crisis"],"note":"Pre-registration, readouts, ship or no-ship criteria, and institutional memory of past tests."},{"id":"survey-practice","label":"Survey design & questionnaire practice","level":4,"domain":"applied","prereqs":["finite-population","sampling-bias"],"note":"Question wording, scales, mode effects, weighting, and nonresponse adjustment."},{"id":"ethics-privacy","label":"Ethics, fairness & privacy","level":5,"domain":"applied","prereqs":["classification-metrics","confounding"],"note":"Fairness metrics and their incompatibility, k-anonymity, and differential privacy basics."},{"id":"stats-tooling","label":"Statistical tooling fluency","level":2,"domain":"applied","prereqs":["reproducible-workflow"],"note":"Python with statsmodels and scipy, R when needed, SQL for the data layer underneath."},{"id":"interview-storytelling","label":"Case & interview storytelling","level":4,"domain":"applied","prereqs":["analysis-scoping","ab-testing"],"note":"Structure an answer: clarify, state assumptions, choose a method, name tradeoffs, land a recommendation."},{"id":"sql-foundations","label":"SQL foundations","level":1,"domain":"de","prereqs":["measurement-scales"],"note":"Select, join, group by, having. The grain of your result set is the whole ballgame."},{"id":"relational-modeling","label":"Relational modeling","level":2,"domain":"de","prereqs":["sql-foundations"],"note":"Keys, cardinality, normalization, and why a fan-out join silently doubles your metric."},{"id":"sql-window-functions","label":"Window functions","level":2,"domain":"de","prereqs":["sql-foundations"],"note":"Row number, lag, running totals, ranking within partitions. Where analyst SQL starts."},{"id":"sql-advanced","label":"Advanced SQL & query plans","level":3,"domain":"de","prereqs":["sql-window-functions","relational-modeling"],"note":"CTEs, recursion, anti-joins, pivots, and reading an execution plan instead of guessing."},{"id":"python-data-stack","label":"Python data stack","level":2,"domain":"de","prereqs":["stats-tooling"],"note":"NumPy, pandas, and vectorized thinking. Split-apply-combine as the everyday pattern."},{"id":"version-control","label":"Version control for analysis","level":2,"domain":"de","prereqs":["reproducible-workflow"],"note":"Branches, pull requests, and code review applied to queries and notebooks, not just apps."},{"id":"dimensional-modeling","label":"Dimensional modeling","level":3,"domain":"de","prereqs":["relational-modeling"],"note":"Facts, dimensions, grain, star schemas, and slowly changing dimensions for history."},{"id":"warehouse-architecture","label":"Warehouse & lakehouse architecture","level":3,"domain":"de","prereqs":["dimensional-modeling"],"note":"Columnar storage, MPP engines, partitioning and clustering, and what makes a query cheap."},{"id":"etl-elt","label":"ETL vs ELT pipelines","level":3,"domain":"de","prereqs":["relational-modeling","reproducible-workflow"],"note":"Extract, load, transform. Incremental loads, idempotency, and late-arriving data."},{"id":"transformation-layer","label":"Transformation layer & dbt","level":3,"domain":"de","prereqs":["etl-elt","dimensional-modeling"],"note":"Modular SQL models, lineage, and turning ad hoc queries into maintained assets."},{"id":"data-quality-testing","label":"Data quality testing","level":3,"domain":"de","prereqs":["etl-elt","data-cleaning"],"note":"Uniqueness, not-null, referential, freshness, and distribution tests that run on every load."},{"id":"event-instrumentation","label":"Event tracking & instrumentation","level":3,"domain":"de","prereqs":["etl-elt","metric-design"],"note":"Event schemas, identity stitching, and the fact that bad logging cannot be fixed downstream."},{"id":"orchestration","label":"Orchestration & scheduling","level":4,"domain":"de","prereqs":["etl-elt","data-quality-testing"],"note":"Dependency DAGs, retries, backfills, SLAs. Airflow, Dagster, or whatever your shop runs."},{"id":"query-performance","label":"Query performance tuning","level":4,"domain":"de","prereqs":["sql-advanced","warehouse-architecture"],"note":"Predicate pushdown, join order, skew, and materialization instead of recomputation."},{"id":"entity-resolution","label":"Entity resolution & record linkage","level":4,"domain":"de","prereqs":["data-quality-testing","classification-metrics"],"note":"Deterministic and probabilistic matching, blocking keys, and precision versus recall on merges."},{"id":"semantic-layer","label":"Semantic layer & metric store","level":4,"domain":"de","prereqs":["transformation-layer","metric-design"],"note":"One definition of revenue, defined once. The cure for dashboards that disagree."},{"id":"spark-distributed","label":"Distributed compute","level":4,"domain":"de","prereqs":["etl-elt","python-data-stack"],"note":"Partitions, shuffles, lazy evaluation, and when a single machine is still the right answer."},{"id":"streaming-data","label":"Streaming & event time","level":5,"domain":"de","prereqs":["orchestration","spark-distributed"],"note":"Kafka style logs, windowing, watermarks, and event time versus processing time."},{"id":"data-governance","label":"Governance, access & compliance","level":4,"domain":"de","prereqs":["data-quality-testing","event-instrumentation"],"note":"PII classification, row level security, retention, FERPA and HIPAA and GDPR obligations."},{"id":"ml-lifecycle","label":"ML project lifecycle","level":3,"domain":"mlops","prereqs":["train-test-split","reproducible-workflow"],"note":"Framing, baseline, iteration, deployment, monitoring. Most projects die at framing."},{"id":"experiment-tracking","label":"Experiment tracking","level":3,"domain":"mlops","prereqs":["hyperparameter-tuning","version-control"],"note":"Log parameters, data versions, and metrics so a result can be reproduced six months later."},{"id":"containerization","label":"Environments & containers","level":3,"domain":"mlops","prereqs":["reproducible-workflow","version-control"],"note":"Pinned dependencies and images so the model runs the same everywhere."},{"id":"feature-store","label":"Feature pipelines & feature stores","level":4,"domain":"mlops","prereqs":["feature-engineering","etl-elt"],"note":"Reusable, point-in-time-correct features shared between training and serving."},{"id":"training-serving-skew","label":"Training and serving skew","level":4,"domain":"mlops","prereqs":["feature-store","data-leakage"],"note":"When production features differ from training features, offline metrics become fiction."},{"id":"deployment-patterns","label":"Deployment patterns","level":4,"domain":"mlops","prereqs":["ml-lifecycle","containerization"],"note":"Batch scoring, real time endpoints, shadow mode, canaries, and rollback plans."},{"id":"model-registry","label":"Model registry & versioning","level":4,"domain":"mlops","prereqs":["experiment-tracking","deployment-patterns"],"note":"Which model is live, trained on what, approved by whom. Audit trails matter in regulated work."},{"id":"ml-testing","label":"Testing data & model code","level":4,"domain":"mlops","prereqs":["ml-lifecycle","data-quality-testing"],"note":"Unit tests on transforms, invariance tests on models, and behavioral test suites."},{"id":"ci-cd-data","label":"CI/CD for data & models","level":4,"domain":"mlops","prereqs":["ml-testing","containerization"],"note":"Automated checks on every pull request so pipelines fail in review, not in production."},{"id":"model-ab-testing","label":"Online testing of models","level":4,"domain":"mlops","prereqs":["ab-testing","deployment-patterns"],"note":"Ship models the way you ship features, with holdouts and guardrails."},{"id":"offline-online-gap","label":"Offline vs online evaluation gap","level":4,"domain":"mlops","prereqs":["model-ab-testing","recsys-ranking"],"note":"Offline AUC gains often do not move the business metric. Understand why before promising lift."},{"id":"latency-cost","label":"Latency, cost & serving constraints","level":4,"domain":"mlops","prereqs":["deployment-patterns"],"note":"The best model you cannot serve in budget is not the best model."},{"id":"retraining-strategy","label":"Retraining & refresh strategy","level":5,"domain":"mlops","prereqs":["drift-monitoring","deployment-patterns"],"note":"Scheduled versus triggered retraining, feedback loops, and self-fulfilling model predictions."},{"id":"scalable-inference","label":"Inference at scale","level":5,"domain":"mlops","prereqs":["latency-cost","spark-distributed"],"note":"Batching, caching, quantization, and horizontal scaling of scoring workloads."},{"id":"responsible-ai-audit","label":"Model risk & responsible AI review","level":5,"domain":"mlops","prereqs":["ethics-privacy","interpretability","model-registry"],"note":"Documentation, bias assessment, challenger models, and sign-off before a model affects people."},{"id":"tensors-autodiff","label":"Tensors & automatic differentiation","level":4,"domain":"dl","prereqs":["neural-nets","multivariable-calculus"],"note":"Computation graphs and reverse mode autodiff. What PyTorch is actually doing."},{"id":"backprop","label":"Backpropagation","level":4,"domain":"dl","prereqs":["neural-nets","gradient-descent"],"note":"Chain rule over a graph, vanishing and exploding gradients, and why depth is hard."},{"id":"activations-init","label":"Activations & initialization","level":4,"domain":"dl","prereqs":["backprop"],"note":"ReLU family, saturation, Xavier and He initialization, and dead units."},{"id":"optimizers-dl","label":"Modern optimizers & schedules","level":4,"domain":"dl","prereqs":["backprop","gradient-descent"],"note":"Momentum, RMSProp, Adam, warmup and decay. Learning rate is the hyperparameter that matters."},{"id":"regularization-dl","label":"Regularization in deep nets","level":4,"domain":"dl","prereqs":["backprop","overfitting-regularization"],"note":"Dropout, weight decay, batch and layer norm, early stopping, and data augmentation."},{"id":"embeddings","label":"Embeddings & representation learning","level":4,"domain":"dl","prereqs":["neural-nets","pca"],"note":"Dense vectors that put similar things close together. The bridge from raw data to models."},{"id":"cnn","label":"Convolutional networks","level":4,"domain":"dl","prereqs":["backprop"],"note":"Local receptive fields, weight sharing, pooling. Still the default for images and some signals."},{"id":"deep-vs-gbm","label":"Deep learning vs gradient boosting","level":4,"domain":"dl","prereqs":["boosting","neural-nets"],"note":"On tabular data, boosted trees usually still win. Know when a neural net is actually justified."},{"id":"transfer-learning","label":"Transfer learning & fine tuning","level":4,"domain":"dl","prereqs":["cnn","embeddings"],"note":"Reuse pretrained representations instead of training from scratch on your small dataset."},{"id":"rnn-lstm","label":"Recurrent networks","level":5,"domain":"dl","prereqs":["backprop","ts-components"],"note":"Sequence models with hidden state, and the long dependency problem that motivated attention."},{"id":"attention-transformers","label":"Attention & transformers","level":5,"domain":"dl","prereqs":["rnn-lstm","tensors-autodiff","embeddings"],"note":"Self-attention, positional encoding, and the architecture underneath nearly all current models."},{"id":"autoencoders","label":"Autoencoders & representation compression","level":5,"domain":"dl","prereqs":["embeddings","backprop"],"note":"Learn a bottleneck. Used for denoising, anomaly detection, and pretraining."},{"id":"generative-models","label":"Generative models","level":5,"domain":"dl","prereqs":["autoencoders","kl-divergence"],"note":"VAEs, GANs, and diffusion. All of them are density modeling with different tradeoffs."},{"id":"uncertainty-dl","label":"Uncertainty in deep models","level":5,"domain":"dl","prereqs":["neural-nets","bayesian-thinking","calibration"],"note":"Deep ensembles, MC dropout, conformal wrappers. Softmax output is not a probability."},{"id":"scaling-laws","label":"Scaling laws & compute tradeoffs","level":5,"domain":"dl","prereqs":["attention-transformers","learning-curves"],"note":"Loss as a predictable function of data, parameters, and compute."},{"id":"text-preprocessing","label":"Text preprocessing","level":3,"domain":"nlp","prereqs":["data-cleaning"],"note":"Tokenization, normalization, stopwords, stemming, and subword vocabularies."},{"id":"tfidf","label":"Bag of words & TF-IDF","level":3,"domain":"nlp","prereqs":["text-preprocessing","entropy"],"note":"Counting done well. Still a strong baseline and still easy to explain to stakeholders."},{"id":"text-classification","label":"Text classification","level":3,"domain":"nlp","prereqs":["tfidf","naive-bayes"],"note":"Spam, intent, sentiment, ticket routing. Label quality dominates model choice."},{"id":"nlp-evaluation","label":"Evaluating text models","level":4,"domain":"nlp","prereqs":["text-classification","classification-metrics"],"note":"Human agreement, inter-rater reliability, and metrics that survive class imbalance."},{"id":"word-embeddings","label":"Word & sentence embeddings","level":4,"domain":"nlp","prereqs":["embeddings","tfidf"],"note":"Word2vec through sentence transformers. Semantic similarity without exact word overlap."},{"id":"llm-usage","label":"How LLMs work, practically","level":4,"domain":"nlp","prereqs":["word-embeddings","text-classification"],"note":"Tokens, context windows, temperature, and why the model is confident when it is wrong."},{"id":"prompt-engineering","label":"Prompting patterns","level":4,"domain":"nlp","prereqs":["llm-usage"],"note":"Structure, examples, decomposition, and output schemas you can parse and validate."},{"id":"llm-analytics-workflow","label":"LLMs inside analytics work","level":4,"domain":"nlp","prereqs":["prompt-engineering","analysis-scoping"],"note":"Classification of free text, summarizing open-ended survey responses, code and query drafting."},{"id":"topic-models","label":"Topic models","level":5,"domain":"nlp","prereqs":["tfidf","dirichlet"],"note":"LDA and NMF for unlabeled document structure. Coherence beats perplexity for judging them."},{"id":"rag","label":"Retrieval augmented generation","level":5,"domain":"nlp","prereqs":["llm-usage","word-embeddings","knn"],"note":"Vector search plus generation. Retrieval quality, not the model, is usually the bottleneck."},{"id":"llm-evaluation","label":"Evaluating LLM systems","level":5,"domain":"nlp","prereqs":["rag","nlp-evaluation","hypothesis-framework"],"note":"Golden sets, pairwise preference, model-as-judge with its biases, and statistical power on small evals."},{"id":"fine-tuning","label":"Fine tuning & adaptation","level":5,"domain":"nlp","prereqs":["attention-transformers","transfer-learning"],"note":"Supervised fine tuning, LoRA, and deciding between prompting, retrieval, and training."},{"id":"llm-guardrails","label":"Hallucination & guardrails","level":5,"domain":"nlp","prereqs":["llm-evaluation","ethics-privacy"],"note":"Grounding, abstention, citation checks, and human review where the cost of error is high."},{"id":"agentic-systems","label":"Tool use & agentic workflows","level":5,"domain":"nlp","prereqs":["prompt-engineering","llm-evaluation"],"note":"Multi-step systems with tools. Error compounds across steps, so measure end to end."},{"id":"funnel-analysis","label":"Funnel analysis","level":3,"domain":"prod","prereqs":["contingency-tables","metric-design"],"note":"Step conversion, drop-off, and the difference between conditional and overall rates."},{"id":"cohort-analysis","label":"Cohort analysis","level":3,"domain":"prod","prereqs":["ts-components","metric-design"],"note":"Group by join period, then compare like with like. Separates mix change from real change."},{"id":"control-charts","label":"Control charts & process monitoring","level":3,"domain":"prod","prereqs":["standard-error","dispersion"],"note":"Common versus special cause variation. Stops you reacting to noise in a weekly review."},{"id":"kpi-dashboards","label":"KPI dashboard design","level":3,"domain":"prod","prereqs":["viz-principles","metric-design"],"note":"Decision-first layout, comparison baselines, and a definition tooltip on every number."},{"id":"mix-shift","label":"Mix shift & metric decomposition","level":4,"domain":"prod","prereqs":["simpsons-paradox","contingency-tables"],"note":"Split a metric move into rate change and composition change before writing the explanation."},{"id":"root-cause","label":"Root cause analysis of metric moves","level":4,"domain":"prod","prereqs":["mix-shift","funnel-analysis"],"note":"Dimension slicing, seasonality checks, instrumentation checks, then hypotheses. In that order."},{"id":"retention-curves","label":"Retention curves & engagement","level":4,"domain":"prod","prereqs":["cohort-analysis","churn-ltv"],"note":"Day-N retention, flattening curves, and the difference between active and returning users."},{"id":"growth-accounting","label":"Growth accounting","level":4,"domain":"prod","prereqs":["retention-curves"],"note":"New, resurrected, churned, and retained. Quick ratio as a health check on growth."},{"id":"segmentation-analysis","label":"Customer segmentation","level":4,"domain":"prod","prereqs":["kmeans","metric-design"],"note":"RFM and behavioral segments, plus the discipline to check the segments are actually stable."},{"id":"north-star-tree","label":"Metric trees & north star","level":4,"domain":"prod","prereqs":["metric-design","root-cause"],"note":"Decompose one top metric into inputs teams can actually move."},{"id":"anomaly-detection","label":"Anomaly detection & alerting","level":4,"domain":"prod","prereqs":["control-charts","ks-test"],"note":"Thresholds, seasonal baselines, and alert fatigue as a real cost function."},{"id":"market-basket","label":"Association rules & basket analysis","level":4,"domain":"prod","prereqs":["contingency-tables","conditional-probability"],"note":"Support, confidence, lift. Lift is a ratio of conditionals, so beware small denominators."},{"id":"journey-attribution","label":"Attribution & user journeys","level":4,"domain":"prod","prereqs":["funnel-analysis","markov-chains"],"note":"First touch, last touch, Markov removal effect, and Shapley attribution."},{"id":"business-forecasting","label":"Business forecasting & planning","level":4,"domain":"prod","prereqs":["sarima","exponential-smoothing","forecast-evaluation"],"note":"Bottom-up versus top-down, reconciliation across hierarchies, and forecast bias tracking."},{"id":"survey-analytics","label":"Survey & NPS analysis","level":4,"domain":"prod","prereqs":["survey-practice","rank-methods"],"note":"Likert handling, NPS as a lossy transform, and open-text coding at scale."},{"id":"incrementality","label":"Marketing incrementality","level":5,"domain":"prod","prereqs":["diff-in-diff","ipw"],"note":"Geo holdouts and ghost ads. Platform-reported conversions are correlational by construction."},{"id":"pricing-analysis","label":"Pricing & elasticity analysis","level":5,"domain":"prod","prereqs":["elasticity-log-models","iv"],"note":"Price is rarely random, so naive demand curves slope the wrong way without an instrument."},{"id":"capacity-planning","label":"Capacity & demand planning","level":5,"domain":"prod","prereqs":["business-forecasting","linear-programming"],"note":"Turn a forecast plus a service target into staffing and inventory decisions."},{"id":"decision-theory","label":"Decision theory","level":4,"domain":"opt","prereqs":["expectation","loss-functions"],"note":"Actions, states, losses, and expected loss. The frame that turns an estimate into a decision."},{"id":"utility-risk","label":"Utility & risk preferences","level":4,"domain":"opt","prereqs":["decision-theory","jensen"],"note":"Risk aversion as concave utility, and why the expected value answer is often the wrong answer."},{"id":"linear-programming","label":"Linear programming","level":4,"domain":"opt","prereqs":["convex-optimization"],"note":"Objective, constraints, feasible region, shadow prices. Allocation problems in one framework."},{"id":"integer-programming","label":"Integer & combinatorial optimization","level":5,"domain":"opt","prereqs":["linear-programming"],"note":"Scheduling, routing, and selection when variables must be whole. Relaxations and heuristics."},{"id":"assignment-matching","label":"Assignment & matching problems","level":5,"domain":"opt","prereqs":["integer-programming"],"note":"Two-sided matching and bipartite assignment. Core of marketplaces and staffing."},{"id":"queueing","label":"Queueing theory","level":5,"domain":"opt","prereqs":["poisson-process","markov-chains"],"note":"Little's law, utilization, and why wait times explode near full capacity."},{"id":"newsvendor","label":"Inventory & newsvendor problems","level":5,"domain":"opt","prereqs":["quantile-function","utility-risk"],"note":"Optimal stocking as a quantile of demand set by overage and underage costs."},{"id":"simulation-optimization","label":"Simulation-based optimization","level":5,"domain":"opt","prereqs":["monte-carlo","linear-programming"],"note":"Search over a simulated system when no closed form objective exists."},{"id":"value-of-information","label":"Value of information","level":5,"domain":"opt","prereqs":["decision-theory","bayesian-thinking"],"note":"What is this analysis worth before you run it. The best pushback on low-value requests."},{"id":"mdp","label":"Markov decision processes","level":5,"domain":"opt","prereqs":["markov-chains","decision-theory"],"note":"States, actions, rewards, policies, and value iteration. The formal home of sequential decisions."},{"id":"rl-basics","label":"Reinforcement learning","level":5,"domain":"opt","prereqs":["mdp","gradient-descent"],"note":"Q-learning and policy gradients, plus the exploration problem that bandits simplify."},{"id":"contextual-bandits","label":"Contextual bandits","level":5,"domain":"opt","prereqs":["bandits","mdp"],"note":"Personalized allocation with feedback. The practical middle ground between A/B and full RL."},{"id":"off-policy-eval","label":"Off-policy evaluation","level":5,"domain":"opt","prereqs":["rl-basics","ipw"],"note":"Estimate a new policy from logged data using importance weights. Logged propensities are essential."},{"id":"game-theory","label":"Game theory basics","level":5,"domain":"opt","prereqs":["decision-theory"],"note":"Equilibria, incentives, and why a metric target changes the behavior it measures."},{"id":"discounting","label":"Time value & discounting","level":3,"domain":"econ","prereqs":["functions-notation"],"note":"Present value, compounding, and discount rates. Every multi-year claim rests on this."},{"id":"roi-npv","label":"ROI, NPV & payback analysis","level":4,"domain":"econ","prereqs":["discounting","uncertainty-reporting"],"note":"Business cases with ranges rather than a single number, and sensitivity to the key assumption."},{"id":"elasticity-log-models","label":"Elasticities & log models","level":4,"domain":"econ","prereqs":["polynomial-interactions"],"note":"Log-log, log-linear, and semi-elasticity. Percent-change interpretation stakeholders understand."},{"id":"index-numbers","label":"Index numbers & deflation","level":4,"domain":"econ","prereqs":["central-tendency","ts-components"],"note":"Base periods, weighted indices, inflation adjustment, and chained versus fixed weights."},{"id":"program-evaluation","label":"Program & policy evaluation","level":5,"domain":"econ","prereqs":["panel-fixed-effects","iv","diff-in-diff"],"note":"Evaluating an intervention with observational data. Standard work in higher ed, health, and public policy."},{"id":"design-power-complex","label":"Power for complex designs","level":5,"domain":"econ","prereqs":["mixed-models","power","simulation-study"],"note":"Clustered and multilevel designs need simulation-based power, not a formula from a textbook."},{"id":"seasonal-adjustment","label":"Seasonal adjustment","level":5,"domain":"econ","prereqs":["sarima","state-space"],"note":"X-13 and STL. Reporting seasonally adjusted series without understanding them is a trap."},{"id":"risk-metrics","label":"Risk measures","level":5,"domain":"econ","prereqs":["heavy-tails","quantile-function"],"note":"Value at risk, expected shortfall, and why tail estimates are fragile."},{"id":"portfolio-covariance","label":"Portfolio & covariance risk","level":5,"domain":"econ","prereqs":["covariance-matrix","quadratic-forms"],"note":"Variance of a weighted sum, diversification, and unstable estimated covariance matrices."},{"id":"financial-simulation","label":"Financial scenario simulation","level":5,"domain":"econ","prereqs":["monte-carlo","garch"],"note":"Path simulation for planning and stress testing, with correlated shocks."},{"id":"graph-basics","label":"Graph fundamentals","level":3,"domain":"graph","prereqs":["set-theory","vectors-matrices"],"note":"Nodes, edges, adjacency matrices, degree distributions, connected components."},{"id":"centrality","label":"Centrality measures","level":4,"domain":"graph","prereqs":["graph-basics","matrix-decomposition"],"note":"Degree, betweenness, eigenvector, PageRank. Each defines importance differently."},{"id":"community-detection","label":"Community detection","level":4,"domain":"graph","prereqs":["graph-basics","hierarchical-clustering"],"note":"Modularity, Louvain, and label propagation for finding clusters in relational data."},{"id":"link-prediction","label":"Link prediction","level":5,"domain":"graph","prereqs":["graph-basics","logistic-regression"],"note":"Predict edges that should exist. Recommendations, fraud rings, and knowledge graphs."},{"id":"graph-embeddings","label":"Graph embeddings","level":5,"domain":"graph","prereqs":["link-prediction","embeddings"],"note":"Node2vec and friends. Turn structure into features that ordinary models can use."},{"id":"gnn","label":"Graph neural networks","level":5,"domain":"graph","prereqs":["graph-embeddings","backprop"],"note":"Message passing over neighborhoods for node and edge level prediction."},{"id":"network-experiments","label":"Experiments on networks","level":5,"domain":"graph","prereqs":["interference","community-detection"],"note":"Cluster randomization and exposure modeling when treatment spills across edges."},{"id":"contagion","label":"Diffusion & contagion models","level":5,"domain":"graph","prereqs":["graph-basics","markov-chains"],"note":"SIR style spread, cascades, and influence maximization."},{"id":"spatial-data","label":"Spatial data types & projections","level":3,"domain":"geo","prereqs":["measurement-scales"],"note":"Points, lines, polygons, coordinate reference systems, and the distortion every map introduces."},{"id":"spatial-joins","label":"Spatial joins & geocoding","level":3,"domain":"geo","prereqs":["spatial-data","sql-advanced"],"note":"Point in polygon, buffers, distance joins, and the messiness of address matching."},{"id":"thematic-mapping","label":"Thematic & choropleth mapping","level":3,"domain":"geo","prereqs":["spatial-data","viz-principles"],"note":"Rate versus count, classification breaks, and normalizing by population or area."},{"id":"modifiable-areal","label":"MAUP & ecological fallacy","level":4,"domain":"geo","prereqs":["thematic-mapping","simpsons-paradox"],"note":"Results change with the boundary you choose, and area-level findings do not transfer to individuals."},{"id":"spatial-autocorrelation","label":"Spatial autocorrelation","level":5,"domain":"geo","prereqs":["spatial-data","acf-pacf"],"note":"Moran's I and LISA. Nearby places are correlated, which breaks independence assumptions."},{"id":"spatial-regression","label":"Spatial regression","level":5,"domain":"geo","prereqs":["spatial-autocorrelation","multiple-regression"],"note":"Spatial lag and error models, and geographically weighted regression."},{"id":"kriging","label":"Kriging & interpolation","level":5,"domain":"geo","prereqs":["spatial-autocorrelation","multivariate-normal"],"note":"Predict at unobserved locations using a fitted covariance structure."},{"id":"point-patterns","label":"Point pattern analysis","level":5,"domain":"geo","prereqs":["spatial-data","poisson-process"],"note":"Clustering versus complete spatial randomness, Ripley's K, and kernel intensity surfaces."},{"id":"stakeholder-management","label":"Stakeholder management","level":3,"domain":"lead","prereqs":["stat-communication"],"note":"Find the real decision behind the request, and agree on what would change the answer."},{"id":"technical-writing","label":"Technical writing & analysis docs","level":3,"domain":"lead","prereqs":["stat-communication","reproducible-workflow"],"note":"Analysis plans, readouts, and design docs. Writing is how analysis scales past you."},{"id":"roadmapping","label":"Prioritization & roadmapping","level":4,"domain":"lead","prereqs":["stakeholder-management","analysis-scoping"],"note":"Impact, confidence, effort, and the courage to say no to low-value requests."},{"id":"effort-estimation","label":"Estimating analytical effort","level":4,"domain":"lead","prereqs":["roadmapping"],"note":"Scoping data availability and unknowns. Most overruns come from the data, not the model."},{"id":"code-review-standards","label":"Code review & team standards","level":4,"domain":"lead","prereqs":["version-control","ml-testing"],"note":"Shared conventions, reviewable queries, and quality gates that do not depend on one person."},{"id":"executive-communication","label":"Executive communication","level":4,"domain":"lead","prereqs":["uncertainty-reporting","viz-principles"],"note":"Answer first, then evidence, then caveats. One slide, one message, one number they remember."},{"id":"mentoring","label":"Mentoring & analytical review","level":4,"domain":"lead","prereqs":["technical-writing","interview-storytelling"],"note":"Reviewing someone else's analysis for correctness and framing, and teaching without taking over."},{"id":"team-okrs","label":"Team goals & operating cadence","level":4,"domain":"lead","prereqs":["metric-design","roadmapping"],"note":"Goals for an analytics team that measure decisions influenced, not dashboards produced."},{"id":"influence","label":"Influence without authority","level":5,"domain":"lead","prereqs":["stakeholder-management","executive-communication"],"note":"Getting a recommendation adopted when you do not own the roadmap."},{"id":"hiring-ds","label":"Hiring & interviewing analysts","level":5,"domain":"lead","prereqs":["mentoring","interview-storytelling"],"note":"Designing signal-bearing loops, calibrated rubrics, and structured debriefs."},{"id":"research-agenda","label":"Setting a research agenda","level":5,"domain":"lead","prereqs":["roadmapping","experiment-culture"],"note":"A portfolio of quick wins and long bets, with an explicit hypothesis for each bet."},{"id":"buy-vs-build","label":"Buy versus build decisions","level":5,"domain":"lead","prereqs":["roadmapping","latency-cost"],"note":"Total cost of ownership, vendor lock-in, and where your team's time is genuinely differentiated."},{"id":"data-org-design","label":"Data org design","level":5,"domain":"lead","prereqs":["team-okrs","data-governance"],"note":"Centralized, embedded, or hub and spoke, and how each shapes the work that gets done."}];
+
+const DOMAINS = {
+  math:    {name:"Mathematical foundations", color:"#8B9BD4", group:"stat"},
+  prob:    {name:"Probability theory",       color:"#6FC3E8", group:"stat"},
+  dist:    {name:"Distributions",            color:"#54D2B4", group:"stat"},
+  eda:     {name:"Descriptive & EDA",        color:"#9FD96A", group:"stat"},
+  est:     {name:"Sampling & estimation",    color:"#D9CF5C", group:"stat"},
+  inf:     {name:"Inference & testing",      color:"#F0A15E", group:"stat"},
+  nonpar:  {name:"Nonparametrics",           color:"#E8836F", group:"stat"},
+  reg:     {name:"Regression & GLMs",        color:"#E86F9B", group:"stat"},
+  surv:    {name:"Survival analysis",        color:"#E07F7F", group:"stat"},
+  ts:      {name:"Time series",              color:"#5EB0F0", group:"stat"},
+  mv:      {name:"Multivariate methods",     color:"#9A8CF0", group:"stat"},
+  bayes:   {name:"Bayesian statistics",      color:"#C77FE0", group:"stat"},
+  causal:  {name:"Design & causal inference",color:"#4FD6D0", group:"stat"},
+  comp:    {name:"Computational statistics", color:"#D9A16A", group:"stat"},
+  applied: {name:"Applied practice",         color:"#C0C8D8", group:"stat"},
+  ml:      {name:"Statistical learning",     color:"#7FE08A", group:"stat"},
+  dl:      {name:"Deep learning",            color:"#B0E063", group:"craft"},
+  nlp:     {name:"Language, LLMs & GenAI",   color:"#E9A9E0", group:"craft"},
+  de:      {name:"Data & analytics engineering", color:"#5BC8C0", group:"craft"},
+  mlops:   {name:"ML systems in production", color:"#86B0E0", group:"craft"},
+  prod:    {name:"Product & business analytics", color:"#F49A7A", group:"craft"},
+  opt:     {name:"Optimization & decisions", color:"#C9B3F0", group:"craft"},
+  econ:    {name:"Econometrics & finance",   color:"#6FD9A0", group:"craft"},
+  graph:   {name:"Networks & graphs",        color:"#F0A0C8", group:"craft"},
+  geo:     {name:"Spatial & geographic",     color:"#7FD1F0", group:"craft"},
+  lead:    {name:"Leading analytical work",  color:"#D8D06E", group:"craft"}
+};
+const DOMAIN_ORDER = ["math","prob","dist","eda","est","inf","nonpar","reg","surv","ts","mv","bayes","causal","comp","applied","ml","dl","nlp","de","mlops","prod","opt","econ","graph","geo","lead"];
+const isCraft = d => DOMAINS[d].group === "craft";
+
+const LEVELS = {
+  1:{name:"Bedrock",       desc:"Vocabulary and arithmetic of data. No prerequisites, but everything above stands on it."},
+  2:{name:"Core mechanics",desc:"The objects you manipulate daily: random variables, distributions, summaries, first models."},
+  3:{name:"Working analyst",desc:"Estimation and testing done properly. This is the bar for a strong data analyst."},
+  4:{name:"Practitioner",  desc:"Model families, experiment craft, and the assumptions that break in production."},
+  5:{name:"Specialist",    desc:"Theory and advanced methods. This is the layer that separates a statistician from an analyst."}
+};
+
+const BY_ID = {};
+DATA.forEach(n => BY_ID[n.id] = n);
+DATA.forEach(n => n.unlocks = []);
+DATA.forEach(n => n.prereqs.forEach(p => BY_ID[p].unlocks.push(n.id)));
+
+/* step order: a topological sort inside each field, so a concept never
+   appears before the concepts it depends on. Ties break by level, then depth. */
+function buildStepOrder(){
+  DOMAIN_ORDER.forEach(d => {
+    const nodes = DATA.filter(n => n.domain === d);
+    const inField = new Set(nodes.map(n => n.id));
+    const indeg = {};
+    nodes.forEach(n => indeg[n.id] = n.prereqs.filter(p => inField.has(p)).length);
+    const open = nodes.filter(n => indeg[n.id] === 0);
+    const seq = [];
+    while (open.length){
+      open.sort((a,b) => a.level - b.level || a.depth - b.depth
+                       || a.prereqs.length - b.prereqs.length || a.label.localeCompare(b.label));
+      const n = open.shift();
+      seq.push(n);
+      n.unlocks.forEach(uid => {
+        if (inField.has(uid) && --indeg[uid] === 0) open.push(BY_ID[uid]);
+      });
+    }
+    seq.forEach((n,i) => { n.step = i + 1; n.stepsInField = seq.length; });
+  });
+}
+
+/* dependency depth: longest chain of prerequisites behind a node */
+(function computeDepth(){
+  const memo = {};
+  function d(id){
+    if (memo[id] !== undefined) return memo[id];
+    memo[id] = 0;
+    const n = BY_ID[id];
+    let m = 0;
+    for (const p of n.prereqs) m = Math.max(m, d(p) + 1);
+    return memo[id] = m;
+  }
+  DATA.forEach(n => n.depth = d(n.id));
+})();
+buildStepOrder();
+
+const KEY = "stats-atlas-v1";
+const state = {
+  done: new Set(),
+  levels: new Set([1,2,3,4,5]),
+  domains: new Set(DOMAIN_ORDER),
+  q: "",
+  view: "chart",
+  labels: false,
+  hideDone: false,
+  group: "field",
+  log: [],
+  sel: null,
+  hover: null
+};
+
+/* ---------------- storage ---------------- */
+let saveTimer = null;
+let lastSaved = null;
+async function load(){
+  try{
+    const r = await window.storage.get(KEY);
+    if (r && r.value){
+      const v = JSON.parse(r.value);
+      const done = Array.isArray(v) ? v : (v.done || []);
+      done.forEach(id => { if (BY_ID[id]) state.done.add(id); });
+      state.log = (v && v.log) || [];
+      lastSaved = (v && v.updated) || null;
+    }
+  }catch(e){ /* nothing stored yet, which is the normal first run */ }
+}
+function recordLog(){
+  const today = new Date().toISOString().slice(0,10);
+  state.log = state.log.filter(e => e[0] !== today);
+  state.log.push([today, state.done.size]);
+  state.log.sort((a,b) => a[0] < b[0] ? -1 : 1);
+  if (state.log.length > 180) state.log = state.log.slice(-180);
+}
+function save(){
+  recordLog();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    lastSaved = new Date().toISOString();
+    try{
+      await window.storage.set(KEY, JSON.stringify({v:2, done:[...state.done], log:state.log, updated:lastSaved}));
+      const el = document.getElementById("saving");
+      el.classList.add("show");
+      setTimeout(()=>el.classList.remove("show"), 900);
+    }catch(e){
+      const el = document.getElementById("saving");
+      el.textContent = "not saved, use backup";
+      el.classList.add("show");
+      setTimeout(()=>el.classList.remove("show"), 2200);
+    }
+  }, 350);
+}
+
+/* ---------------- helpers ---------------- */
+const isDone  = id => state.done.has(id);
+const isReady = id => !isDone(id) && BY_ID[id].prereqs.every(isDone);
+function matches(n){
+  if (!state.levels.has(n.level)) return false;
+  if (!state.domains.has(n.domain)) return false;
+  if (state.hideDone && isDone(n.id)) return false;
+  if (state.q){
+    const q = state.q.toLowerCase();
+    if (!(n.label.toLowerCase().includes(q) || n.note.toLowerCase().includes(q) || DOMAINS[n.domain].name.toLowerCase().includes(q))) return false;
+  }
+  return true;
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------------- radial layout ---------------- */
+const R = {1:150, 2:268, 3:386, 4:504, 5:622};
+const CX = 0, CY = 0;
+let positions = {};
+
+function layout(nodes){
+  positions = {};
+  const counts = {};
+  DOMAIN_ORDER.forEach(d => counts[d] = 0);
+  nodes.forEach(n => counts[n.domain]++);
+  const active = DOMAIN_ORDER.filter(d => counts[d] > 0);
+  const total = nodes.length || 1;
+  const gap = 1.1 * Math.PI / 180;
+  let a = -Math.PI / 2;
+  const wedge = {};
+  active.forEach(d => {
+    const span = (counts[d] / total) * (Math.PI * 2);
+    wedge[d] = {start: a + gap/2, end: a + span - gap/2, mid: a + span/2, span};
+    a += span;
+  });
+  active.forEach(d => {
+    for (let lv = 1; lv <= 5; lv++){
+      const group = nodes.filter(n => n.domain === d && n.level === lv)
+                         .sort((x,y) => x.step - y.step);
+      const k = group.length;
+      if (!k) continue;
+      const w = wedge[d];
+      group.forEach((n,i) => {
+        const t = k === 1 ? 0.5 : (i + 0.5) / k;
+        const ang = w.start + t * (w.end - w.start);
+        const rr = R[lv] + (i % 2 ? 22 : -22) * (k > 3 ? 1 : 0);
+        positions[n.id] = {x: CX + rr*Math.cos(ang), y: CY + rr*Math.sin(ang), a: ang, r: rr};
+      });
+    }
+  });
+  return wedge;
+}
+
+/* ---------------- chart rendering ---------------- */
+const svg = document.getElementById("chart");
+let vb = {x:-760, y:-760, w:1520, h:1520};
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, text){
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function applyVB(){ svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
+
+function renderChart(){
+  const nodes = DATA.filter(matches);
+  const wedge = layout(nodes);
+  const vis = new Set(nodes.map(n => n.id));
+  svg.innerHTML = "";
+  applyVB();
+
+  const gRing = el("g",{}), gEdge = el("g",{}), gNode = el("g",{}), gLab = el("g",{});
+  svg.append(gRing, gEdge, gNode, gLab);
+
+  /* rings */
+  for (let lv = 1; lv <= 5; lv++){
+    if (!state.levels.has(lv)) continue;
+    gRing.append(el("circle",{cx:0,cy:0,r:R[lv],fill:"none",stroke:"#1B2440","stroke-width":1}));
+    gRing.append(el("text",{x:6,y:-R[lv]+4,fill:"#4A5878","font-family":"var(--mono)","font-size":11,"letter-spacing":"0.2em"}, "LEVEL " + lv));
+  }
+
+  /* field labels on the rim */
+  for (const d in wedge){
+    const w = wedge[d];
+    if (w.span < 0.12) continue;
+    const rr = 690, ang = w.mid;
+    const x = rr*Math.cos(ang), y = rr*Math.sin(ang);
+    const left = Math.cos(ang) < -0.05;
+    const t = el("text",{x,y,fill:DOMAINS[d].color,"font-family":"var(--mono)","font-size":12.5,
+      "letter-spacing":"0.14em","text-anchor":left?"end":(Math.abs(Math.cos(ang))<0.05?"middle":"start"),
+      "dominant-baseline":"middle","opacity":.85}, DOMAINS[d].name.toUpperCase());
+    gLab.append(t);
+  }
+
+  /* edges */
+  const hl = state.sel || state.hover;
+  const near = new Set();
+  if (hl){ near.add(hl); BY_ID[hl].prereqs.forEach(p=>near.add(p)); BY_ID[hl].unlocks.forEach(u=>near.add(u)); }
+  nodes.forEach(n => {
+    n.prereqs.forEach(p => {
+      if (!vis.has(p)) return;
+      const A = positions[p], B = positions[n.id];
+      if (!A || !B) return;
+      const mx = (A.x+B.x)/2, my = (A.y+B.y)/2;
+      const cx = mx*0.72, cy = my*0.72;
+      const touched = hl && (n.id === hl || p === hl);
+      const dimmed = hl && !touched;
+      gEdge.append(el("path",{
+        d:`M${A.x.toFixed(1)},${A.y.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${B.x.toFixed(1)},${B.y.toFixed(1)}`,
+        fill:"none",
+        stroke: touched ? DOMAINS[n.domain].color : (isDone(p)&&isDone(n.id) ? "#5C4A24" : "#243052"),
+        "stroke-width": touched ? 1.5 : 0.7,
+        opacity: dimmed ? 0.07 : (touched ? 0.85 : 0.5)
+      }));
+    });
+  });
+
+  /* nodes */
+  const showAllLabels = state.labels || nodes.length <= 70;
+  nodes.forEach(n => {
+    const P = positions[n.id];
+    const c = DOMAINS[n.domain].color;
+    const done = isDone(n.id), ready = isReady(n.id);
+    const dimmed = hl && !near.has(n.id);
+    const rad = 4 + Math.min(6, Math.sqrt(n.unlocks.length) * 1.9);
+    const g = el("g",{class:"nd","data-id":n.id, style:"cursor:pointer", opacity: dimmed ? 0.16 : 1});
+    const craft = isCraft(n.domain);
+    const mark = (rr, a) => craft
+      ? el("rect", Object.assign({x:P.x-rr, y:P.y-rr, width:rr*2, height:rr*2, rx:rr*0.34}, a))
+      : el("circle", Object.assign({cx:P.x, cy:P.y, r:rr}, a));
+    if (done){
+      g.append(mark(rad+6,{fill:"#F0B95E",opacity:.14}));
+      g.append(mark(rad,{fill:"#F0B95E",stroke:"#FFF0D0","stroke-width":.8}));
+    } else if (ready){
+      g.append(mark(rad+4.5,{fill:"none",stroke:"#4FD1E0","stroke-width":1,"stroke-dasharray":"2 3",opacity:.9}));
+      g.append(mark(rad,{fill:c,opacity:.9}));
+    } else {
+      g.append(mark(rad,{fill:"#0D1424",stroke:c,"stroke-width":1.2,opacity:.85}));
+    }
+    if (n.id === state.sel){
+      g.append(mark(rad+11,{fill:"none",stroke:"#FFFFFF","stroke-width":1,opacity:.7}));
+    }
+    g.append(el("title",{}, n.label + "  (Level " + n.level + ")"));
+    gNode.append(g);
+
+    if (showAllLabels || n.id === state.sel || n.id === state.hover || near.has(n.id)){
+      const left = Math.cos(P.a) < 0;
+      const off = rad + 7;
+      const lx = P.x + Math.cos(P.a)*off, ly = P.y + Math.sin(P.a)*off;
+      gLab.append(el("text",{
+        x:lx, y:ly, fill: done ? "#F0B95E" : (dimmed ? "#3A4664" : "#B9C4DC"),
+        "font-family":"var(--sans)","font-size":10.5,"text-anchor":left?"end":"start",
+        "dominant-baseline":"middle","paint-order":"stroke","stroke":"#090D18","stroke-width":2.6,
+        opacity: dimmed ? .25 : 1, style:"pointer-events:none"
+      }, n.label));
+    }
+  });
+
+  if (!nodes.length){
+    gLab.append(el("text",{x:0,y:0,fill:"#8593B0","font-size":16,"text-anchor":"middle"},"No concepts match these filters."));
+  }
+}
+
+/* pan + zoom */
+(function interactions(){
+  let dragging = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  svg.addEventListener("pointerdown", e => {
+    dragging = true; moved = false; sx = e.clientX; sy = e.clientY; ox = vb.x; oy = vb.y;
+    svg.classList.add("grabbing"); svg.setPointerCapture(e.pointerId);
+  });
+  svg.addEventListener("pointermove", e => {
+    const t = e.target.closest ? e.target.closest(".nd") : null;
+    if (!dragging){
+      const id = t ? t.dataset.id : null;
+      if (id !== state.hover){ state.hover = id; renderChart(); }
+      return;
+    }
+    const k = vb.w / svg.clientWidth;
+    const dx = (e.clientX - sx) * k, dy = (e.clientY - sy) * k;
+    if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+    vb.x = ox - dx; vb.y = oy - dy; applyVB();
+  });
+  svg.addEventListener("pointerup", e => {
+    dragging = false; svg.classList.remove("grabbing");
+    if (moved) return;
+    const t = e.target.closest ? e.target.closest(".nd") : null;
+    select(t ? t.dataset.id : null);
+  });
+  svg.addEventListener("pointerleave", () => { dragging = false; svg.classList.remove("grabbing"); if (state.hover){ state.hover = null; renderChart(); } });
+  svg.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    const px = vb.x + (e.clientX - r.left)/r.width * vb.w;
+    const py = vb.y + (e.clientY - r.top)/r.height * vb.h;
+    const f = e.deltaY > 0 ? 1.13 : 0.885;
+    const nw = Math.max(260, Math.min(3400, vb.w * f));
+    const s = nw / vb.w;
+    vb.x = px - (px - vb.x) * s; vb.y = py - (py - vb.y) * s;
+    vb.w = nw; vb.h = nw; applyVB();
+  }, {passive:false});
+  function zoom(f){
+    const cx = vb.x + vb.w/2, cy = vb.y + vb.h/2;
+    vb.w = Math.max(260, Math.min(3400, vb.w * f)); vb.h = vb.w;
+    vb.x = cx - vb.w/2; vb.y = cy - vb.h/2; applyVB();
+  }
+  document.getElementById("zoomIn").onclick = () => zoom(0.8);
+  document.getElementById("zoomOut").onclick = () => zoom(1.25);
+  document.getElementById("zoomFit").onclick = () => { vb = {x:-780,y:-780,w:1560,h:1560}; applyVB(); };
+})();
+
+function select(id){
+  state.sel = id;
+  renderChart();
+  renderPanel();
+  if (id){
+    const P = positions[id];
+    if (P && (P.x < vb.x || P.x > vb.x+vb.w || P.y < vb.y || P.y > vb.y+vb.h)){
+      vb.x = P.x - vb.w/2; vb.y = P.y - vb.h/2; applyVB();
+    }
+  }
+}
+
+/* ---------------- detail panel ---------------- */
+function renderPanel(){
+  const p = document.getElementById("panel");
+  if (!state.sel){
+    const ready = DATA.filter(n => isReady(n.id)).sort((a,b)=>a.level-b.level||a.depth-b.depth).slice(0,8);
+    p.innerHTML = `<div class="eyebrow">Start here</div>
+      <h3>Pick any star</h3>
+      <p class="note">Tap a node to see what it needs, what it unlocks, and to mark it mastered. Gold means done, dashed cyan means every prerequisite is already gold.</p>
+      <h5>Ready to start now</h5>
+      <ul class="linklist">${ready.map(n=>`<li><button data-go="${n.id}">${esc(n.label)}</button></li>`).join("")}</ul>`;
+  } else {
+    const n = BY_ID[state.sel];
+    const done = isDone(n.id);
+    const pre = n.prereqs.map(id => BY_ID[id]);
+    const un = n.unlocks.map(id => BY_ID[id]).sort((a,b)=>a.level-b.level);
+    p.innerHTML = `
+      <div class="eyebrow" style="color:${DOMAINS[n.domain].color}">Level ${n.level} &middot; ${esc(DOMAINS[n.domain].name)}</div>
+      <h3>${esc(n.label)}</h3>
+      <p class="note">${esc(n.note)}</p>
+      <h5>Needs first (${pre.length})</h5>
+      ${pre.length ? `<ul class="linklist">${pre.map(x=>`<li><button data-go="${x.id}" class="${isDone(x.id)?'done':''}">${isDone(x.id)?"&#10003; ":""}${esc(x.label)}</button></li>`).join("")}</ul>`
+                   : `<p class="empty">Nothing. This is an entry point.</p>`}
+      <h5>Unlocks (${un.length})</h5>
+      ${un.length ? `<ul class="linklist">${un.map(x=>`<li><button data-go="${x.id}" class="${isDone(x.id)?'done':''}">${esc(x.label)}</button></li>`).join("")}</ul>`
+                  : `<p class="empty">Nothing further depends on this one.</p>`}
+      <button class="markbtn ${done?'on':''}" data-mark="${n.id}">${done ? "&#10003; Mastered" : "Mark as mastered"}</button>`;
+  }
+  p.querySelectorAll("[data-go]").forEach(b => b.onclick = () => select(b.dataset.go));
+  const m = p.querySelector("[data-mark]");
+  if (m) m.onclick = () => toggle(m.dataset.mark);
+}
+
+/* ---------------- checklist ---------------- */
+function itemHTML(n, showStep){
+  const done = isDone(n.id), ready = isReady(n.id);
+  const unmet = n.prereqs.filter(p => !isDone(p)).map(p => BY_ID[p].label);
+  return `<button class="item ${done?'done':''} ${ready?'ready':''}" data-mark="${n.id}">
+    ${showStep ? `<span class="step">${String(n.step).padStart(2,"0")}</span>` : ``}
+    <span class="box">&#10003;</span>
+    <span><span class="t">${esc(n.label)}${showStep?`<span class="lvtag">L${n.level}</span>`:``}</span>
+    <span class="d">${esc(n.note)}</span>
+    ${unmet.length ? `<span class="needs">needs: ${esc(unmet.slice(0,3).join(", "))}${unmet.length>3?" +"+(unmet.length-3):""}</span>` : ``}
+    </span></button>`;
+}
+function readyStripHTML(){
+  const ready = DATA.filter(n => isReady(n.id) && state.levels.has(n.level) && state.domains.has(n.domain))
+                    .sort((a,b)=>a.level-b.level||a.depth-b.depth||a.label.localeCompare(b.label)).slice(0,14);
+  if (!ready.length) return "";
+  return `<div class="ready-strip"><h4>Ready to start</h4>
+    <p>Every prerequisite for these is already checked off. Work left to right.</p>
+    <div class="ready-items">${ready.map(n=>`<button data-go="${n.id}">${esc(n.label)} <span style="opacity:.6">L${n.level}</span></button>`).join("")}</div></div>`;
+}
+function renderList(){
+  const body = document.getElementById("listBody");
+  const nodes = DATA.filter(matches);
+  let html = readyStripHTML();
+  html += state.group === "field" ? listByField(nodes) : listByLevel(nodes);
+  if (!nodes.length) html += `<p class="empty">No concepts match these filters.</p>`;
+  body.innerHTML = html;
+  body.querySelectorAll("[data-mark]").forEach(b => b.onclick = () => toggle(b.dataset.mark));
+  body.querySelectorAll("[data-go]").forEach(b => b.onclick = () => toggle(b.dataset.go));
+}
+function listByField(nodes){
+  let html = "";
+  for (const d of DOMAIN_ORDER){
+    const items = nodes.filter(n => n.domain === d).sort((a,b) => a.step - b.step);
+    if (!items.length) continue;
+    const all = DATA.filter(n => n.domain === d);
+    const done = all.filter(n => isDone(n.id)).length;
+    html += `<section class="field-block">
+      <div class="field-head">
+        <span class="sw" style="background:${DOMAINS[d].color};border-radius:${isCraft(d)?"3px":"50%"}"></span>
+        <h3>${esc(DOMAINS[d].name)}</h3>
+        <span class="kind">${isCraft(d) ? "craft" : "statistics"}</span>
+        <span class="counts">${done}/${all.length}</span>
+      </div>
+      <div class="bar"><i style="width:${(done/all.length*100).toFixed(1)}%"></i></div>
+      <div class="seq">${items.map(n => itemHTML(n, true)).join("")}</div>
+    </section>`;
+  }
+  return html;
+}
+function listByLevel(nodes){
+  let html = "";
+  for (let lv = 1; lv <= 5; lv++){
+    if (!state.levels.has(lv)) continue;
+    const inLv = nodes.filter(n => n.level === lv);
+    if (!inLv.length) continue;
+    const allLv = DATA.filter(n => n.level === lv);
+    const doneLv = allLv.filter(n => isDone(n.id)).length;
+    html += `<section class="lvl-block"><div class="lvl-head">
+        <div class="lvl-num">${lv}</div>
+        <div><div class="lvl-name">${LEVELS[lv].name}</div></div>
+        <div class="lvl-desc">${LEVELS[lv].desc}</div>
+        <div class="counts">${doneLv}/${allLv.length}</div>
+      </div>
+      <div class="bar"><i style="width:${(doneLv/allLv.length*100).toFixed(1)}%"></i></div>`;
+    for (const d of DOMAIN_ORDER){
+      const items = inLv.filter(n => n.domain === d).sort((a,b) => a.step - b.step);
+      if (!items.length) continue;
+      const allD = DATA.filter(n => n.level===lv && n.domain===d);
+      const doneD = allD.filter(n=>isDone(n.id)).length;
+      html += `<div class="dom-group"><div class="dom-head">
+        <span class="sw" style="background:${DOMAINS[d].color};border-radius:${isCraft(d)?"2px":"50%"}"></span>
+        ${esc(DOMAINS[d].name)}<span class="frac">${doneD}/${allD.length}</span></div>
+        <div class="items">${items.map(n => itemHTML(n, false)).join("")}</div></div>`;
+    }
+    html += `</section>`;
+  }
+  return html;
+}
+
+/* ---------------- progress drawer ---------------- */
+function exportMarkdown(){
+  const pct = Math.round(state.done.size / DATA.length * 100);
+  let out = `# Atlas of Statistics, progress\n\n${state.done.size} of ${DATA.length} complete (${pct}%), exported ${new Date().toISOString().slice(0,10)}\n`;
+  for (const d of DOMAIN_ORDER){
+    const items = DATA.filter(n => n.domain === d).sort((a,b) => a.step - b.step);
+    const done = items.filter(n => isDone(n.id)).length;
+    out += `\n## ${DOMAINS[d].name} (${done}/${items.length})\n\n`;
+    items.forEach(n => {
+      out += `- [${isDone(n.id) ? "x" : " "}] ${String(n.step).padStart(2,"0")}. ${n.label} (L${n.level})\n`;
+    });
+  }
+  return out;
+}
+function download(name, text){
+  try{
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], {type:"text/plain"}));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    return true;
+  }catch(e){ return false; }
+}
+function openDrawer(){
+  const mount = document.getElementById("drawerMount");
+  const pct = state.done.size / DATA.length;
+  const lvRows = [1,2,3,4,5].map(lv => {
+    const all = DATA.filter(n => n.level === lv), dn = all.filter(n => isDone(n.id)).length;
+    return `<div class="minirow"><span>Level ${lv}, ${LEVELS[lv].name}</span>
+      <span class="track"><i style="width:${(dn/all.length*100).toFixed(1)}%;background:var(--gold)"></i></span>
+      <span class="num">${dn}/${all.length}</span></div>`;
+  }).join("");
+  const fieldRows = DOMAIN_ORDER.map(d => {
+    const all = DATA.filter(n => n.domain === d), dn = all.filter(n => isDone(n.id)).length;
+    return `<div class="minirow"><span>${esc(DOMAINS[d].name)}</span>
+      <span class="track"><i style="width:${(dn/all.length*100).toFixed(1)}%;background:${DOMAINS[d].color}"></i></span>
+      <span class="num">${dn}/${all.length}</span></div>`;
+  }).join("");
+
+  const pts = state.log.slice(-40);
+  let spark = `<p class="empty" style="margin:0">Check something off and your day-by-day progress starts plotting here.</p>`;
+  if (pts.length > 1){
+    const max = Math.max(...pts.map(p => p[1]), 1);
+    const W = 600, H = 60;
+    const path = pts.map((p,i) => `${(i/(pts.length-1)*W).toFixed(1)},${(H - p[1]/max*(H-8)).toFixed(1)}`).join(" ");
+    spark = `<svg class="spark" viewBox="0 0 ${W} ${H+10}" preserveAspectRatio="none">
+      <polyline points="${path}" fill="none" stroke="#F0B95E" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="counts" style="margin-top:5px">${pts[0][0]} to ${pts[pts.length-1][0]}, peak ${max} concepts</div>`;
+  }
+
+  const scrim = document.createElement("div");
+  scrim.className = "scrim";
+  scrim.innerHTML = `<div class="drawer" role="dialog" aria-label="Progress and backup">
+    <button class="close" data-close>&times;</button>
+    <h2>${state.done.size} of ${DATA.length} mastered</h2>
+    <p class="sub">${Math.round(pct*100)}% of the atlas${lastSaved ? ", last saved " + lastSaved.slice(0,16).replace("T"," ") : ""}</p>
+    <h5>By level</h5><div class="minibars">${lvRows}</div>
+    <h5>By field</h5><div class="minibars">${fieldRows}</div>
+    <h5>Progress over time</h5>${spark}
+    <h5>Back up or move your progress</h5>
+    <p class="sub" style="margin:0 0 8px">Your checkmarks save automatically in this chat. Copy the code below to keep a copy elsewhere, or paste an old code back in to restore it.</p>
+    <textarea id="codeBox" spellcheck="false">${[...state.done].join(",")}</textarea>
+    <div class="btnrow">
+      <button data-act="copy" class="primary">Copy code</button>
+      <button data-act="restore">Restore from code</button>
+      <button data-act="md">Download checklist as Markdown</button>
+    </div>
+    <div class="msg" id="drawerMsg"></div>
+  </div>`;
+  mount.innerHTML = "";
+  mount.appendChild(scrim);
+  const msg = t => document.getElementById("drawerMsg").textContent = t;
+  scrim.addEventListener("click", e => { if (e.target === scrim) mount.innerHTML = ""; });
+  scrim.querySelector("[data-close]").onclick = () => mount.innerHTML = "";
+  scrim.querySelectorAll("[data-act]").forEach(b => b.onclick = () => {
+    const box = document.getElementById("codeBox");
+    if (b.dataset.act === "copy"){
+      box.select();
+      if (navigator.clipboard) navigator.clipboard.writeText(box.value).then(()=>msg("Copied. Paste it somewhere safe."), ()=>msg("Select the text above and copy it manually."));
+      else msg("Select the text above and copy it manually.");
+    }
+    if (b.dataset.act === "restore"){
+      const ids = box.value.split(/[,\s]+/).map(s => s.trim()).filter(s => BY_ID[s]);
+      if (!ids.length){ msg("No recognizable concept ids in that code."); return; }
+      state.done = new Set(ids);
+      save(); renderAll();
+      msg("Restored " + ids.length + " concepts.");
+      setTimeout(openDrawer, 400);
+    }
+    if (b.dataset.act === "md"){
+      msg(download("statistics-atlas-progress.md", exportMarkdown())
+        ? "Downloaded." : "Download blocked here. Copy the code instead.");
+    }
+  });
+}
+
+/* ---------------- shared ---------------- */
+function toggle(id){
+  if (state.done.has(id)) state.done.delete(id); else state.done.add(id);
+  save();
+  renderAll();
+}
+function renderHeader(){
+  const total = DATA.length, d = state.done.size;
+  const pct = total ? d/total : 0;
+  const C = 2*Math.PI*26;
+  document.getElementById("dialArc").setAttribute("stroke-dasharray", `${(pct*C).toFixed(1)} ${C.toFixed(1)}`);
+  document.getElementById("dialNum").textContent = Math.round(pct*100) + "%";
+  const ready = DATA.filter(n=>isReady(n.id)).length;
+  document.getElementById("counts").innerHTML = `<b>${d}</b> of ${total} complete &middot; ${ready} ready to start`;
+  document.querySelectorAll("#levelChips .chip").forEach(c => {
+    const lv = +c.dataset.lv;
+    const all = DATA.filter(n=>n.level===lv);
+    c.querySelector(".n").textContent = all.filter(n=>isDone(n.id)).length + "/" + all.length;
+  });
+  document.getElementById("foot").textContent =
+    DATA.length + " concepts, " + DATA.reduce((s,n)=>s+n.prereqs.length,0) + " prerequisite links, " +
+    DOMAIN_ORDER.length + " fields. Progress saves automatically.";
+  document.getElementById("tot").textContent = DATA.length;
+}
+function renderAll(){
+  renderHeader();
+  if (state.view === "chart"){ renderChart(); renderPanel(); } else { renderList(); }
+}
+
+/* ---------------- controls wiring ---------------- */
+(function buildControls(){
+  const lc = document.getElementById("levelChips");
+  for (let lv = 1; lv <= 5; lv++){
+    const b = document.createElement("button");
+    b.className = "chip lvl-" + lv;
+    b.dataset.lv = lv;
+    b.setAttribute("aria-pressed","true");
+    b.innerHTML = `<span class="dot"></span>L${lv} ${LEVELS[lv].name} <span class="n"></span>`;
+    b.onclick = () => {
+      if (state.levels.has(lv)) state.levels.delete(lv); else state.levels.add(lv);
+      b.setAttribute("aria-pressed", state.levels.has(lv));
+      renderAll();
+    };
+    lc.append(b);
+  }
+  const lg = document.getElementById("legend");
+  const rowFor = {};
+  const addRows = (group, title) => {
+    const h = document.createElement("h4");
+    h.textContent = title;
+    h.style.marginTop = group === "craft" ? "10px" : "0";
+    lg.append(h);
+    DOMAIN_ORDER.filter(d => DOMAINS[d].group === group).forEach(d => {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `<span class="sw" style="background:${DOMAINS[d].color};${group==="craft"?"border-radius:3px":"border-radius:50%"}"></span>${DOMAINS[d].name}`;
+      row.onclick = () => {
+        if (state.domains.has(d)) state.domains.delete(d); else state.domains.add(d);
+        syncLegend();
+        renderAll();
+      };
+      rowFor[d] = row;
+      lg.append(row);
+    });
+  };
+  function syncLegend(){
+    DOMAIN_ORDER.forEach(d => rowFor[d] && rowFor[d].classList.toggle("off", !state.domains.has(d)));
+  }
+  lg.querySelector("h4").remove();
+  addRows("stat","Core statistics");
+  addRows("craft","Data science craft");
+  const quick = document.createElement("div");
+  quick.className = "quick";
+  quick.innerHTML = `<button data-g="all">All</button><button data-g="stat">Stats only</button><button data-g="craft">Craft only</button>`;
+  quick.querySelectorAll("button").forEach(b => b.onclick = () => {
+    state.domains = new Set(b.dataset.g === "all" ? DOMAIN_ORDER : DOMAIN_ORDER.filter(d => DOMAINS[d].group === b.dataset.g));
+    syncLegend();
+    renderAll();
+  });
+  lg.append(quick);
+  const setView = v => {
+    state.view = v;
+    document.getElementById("viewChart").setAttribute("aria-pressed", v==="chart");
+    document.getElementById("viewList").setAttribute("aria-pressed", v==="list");
+    document.getElementById("stage").classList.toggle("hidden", v!=="chart");
+    document.getElementById("listView").classList.toggle("hidden", v!=="list");
+    renderAll();
+  };
+  document.getElementById("viewChart").onclick = () => setView("chart");
+  document.getElementById("viewList").onclick  = () => setView("list");
+  let t;
+  document.getElementById("search").oninput = e => {
+    clearTimeout(t);
+    t = setTimeout(() => { state.q = e.target.value.trim(); renderAll(); }, 160);
+  };
+  const lt = document.getElementById("labelToggle");
+  lt.onclick = () => { state.labels = !state.labels; lt.setAttribute("aria-pressed", state.labels); renderChart(); };
+  const hd = document.getElementById("hideDone");
+  hd.onclick = () => { state.hideDone = !state.hideDone; hd.setAttribute("aria-pressed", state.hideDone); renderAll(); };
+  const setGroup = g => {
+    state.group = g;
+    document.getElementById("groupField").setAttribute("aria-pressed", g==="field");
+    document.getElementById("groupLevel").setAttribute("aria-pressed", g==="level");
+    renderList();
+  };
+  document.getElementById("groupField").onclick = () => setGroup("field");
+  document.getElementById("groupLevel").onclick = () => setGroup("level");
+  document.getElementById("progressBtn").onclick = openDrawer;
+  document.getElementById("resetBtn").onclick = () => {
+    if (!state.done.size) return;
+    if (confirm("Clear all " + state.done.size + " checked concepts?")){ state.done.clear(); save(); renderAll(); }
+  };
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    const m = document.getElementById("drawerMount");
+    if (m.innerHTML) m.innerHTML = ""; else select(null);
+  });
+})();
+
+load().then(() => { renderAll(); });
+</script>
+</body>
+</html>
