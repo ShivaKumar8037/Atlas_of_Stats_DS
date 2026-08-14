@@ -604,14 +604,16 @@ function renderChart(){
 
 /* pan + zoom */
 (function interactions(){
-  let dragging = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  let dragging = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0, downId = null;
   svg.addEventListener("pointerdown", e => {
+    const t0 = e.target.closest ? e.target.closest(".nd") : null;
+    downId = t0 ? t0.dataset.id : null;
     dragging = true; moved = false; sx = e.clientX; sy = e.clientY; ox = vb.x; oy = vb.y;
     svg.classList.add("grabbing"); svg.setPointerCapture(e.pointerId);
   });
   svg.addEventListener("pointermove", e => {
-    const t = e.target.closest ? e.target.closest(".nd") : null;
     if (!dragging){
+      const t = e.target.closest ? e.target.closest(".nd") : null;
       const id = t ? t.dataset.id : null;
       if (id !== state.hover){ state.hover = id; renderChart(); }
       return;
@@ -623,16 +625,16 @@ function renderChart(){
   });
   svg.addEventListener("pointerup", e => {
     dragging = false; svg.classList.remove("grabbing");
-    if (moved) return;
-    const t = e.target.closest ? e.target.closest(".nd") : null;
-    if (t){
-      const id = t.dataset.id;
+    if (moved){ downId = null; return; }
+    if (downId){
+      const id = downId;
       if (state.holds.has(id)) state.holds.delete(id); else state.holds.add(id);
       select(id);
     } else {
       state.holds.clear();
       select(null);
     }
+    downId = null;
   });
   svg.addEventListener("pointerleave", () => { dragging = false; svg.classList.remove("grabbing"); if (state.hover){ state.hover = null; renderChart(); } });
   svg.addEventListener("wheel", e => {
